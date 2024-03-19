@@ -1,6 +1,6 @@
 AUTHOR = 'Lennart Landsmeer'
 SITENAME = 'Lennart Landsmeer'
-SITEURL = ""
+SITEURL = "https://blog.llandsmeer.com"
 
 PATH = "content"
 
@@ -17,7 +17,7 @@ AUTHOR_FEED_RSS = None
 
 # Blogroll
 LINKS = (
-    ("Pelican", "https://getpelican.com/"),
+    ("Github", "https://github.com/llandsmeer"),
     ("Python.org", "https://www.python.org/"),
     ("Jinja2", "https://palletsprojects.com/p/jinja/"),
     ("You can modify those links in your config file", "#"),

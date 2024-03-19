@@ -6,15 +6,14 @@
         <meta name="generator" content="Pelican" />
         <title>"Recursive sata structures: Catamorphism with context"</title>
         <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
-        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="The Weekend Writeup Atom Feed" />
         <meta name="description" content="In haskell, the Fix f data type allows you to specify a recursive datatype from its fixpoint. Folds and unfolds, as catamorphisms and..." />
 </head>
 
 <body id="index" class="home">
         <header id="banner" class="body">
-                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <h1><a href="https://blog.llandsmeer.com/">The Weekend Writeup <strong>Lennart Landsmeer's Personal Blog</strong></a></h1>
                 <nav><ul>
-                    <li class="active"><a href="https://blog.llandsmeer.com/category/tech.html">tech</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
 <section id="content" class="body">
@@ -28,13 +27,9 @@
     <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2019-02-16T01:20:00+01:00">
-                Published: za 16 februari 2019
+        16 feb 2019
         </abbr>
 
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
 
 </footer><!-- /.post-info -->      <p>In haskell, the <code>Fix f</code> data type allows you to specify a recursive datatype from its fixpoint.  Folds and unfolds, as catamorphisms and anamorphisms, come for free. With these <em>recursion schemes</em>, functions can be specified over the data type without explicit recursion. A catamorphism folds bottom-top to a single value, while its dual the anamorphism can be used to unfold a single value.</p>
 <div class="highlight"><pre><span></span><code><span class="kr">newtype</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">unFix</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="p">(</span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
@@ -95,33 +90,7 @@
   </article>
 </section>
         <section id="extras" class="body">
-                <div class="blogroll">
-                        <h2>links</h2>
-                        <ul>
-                            <li><a href="https://github.com/llandsmeer">Github</a></li>
-                            <li><a href="https://www.python.org/">Python.org</a></li>
-                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
-                            <li><a href="#">You can modify those links in your config file</a></li>
-                        </ul>
-                </div><!-- /.blogroll -->
-                <div class="social">
-                        <h2>social</h2>
-                        <ul>
-                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
-
-                            <li><a href="#">You can add links in your config file</a></li>
-                            <li><a href="#">Another social link</a></li>
-                        </ul>
-                </div><!-- /.social -->
         </section><!-- /#extras -->
-
-        <footer id="contentinfo" class="body">
-                <address id="about" class="vcard body">
-                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
-                </address><!-- /#about -->
-
-                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
-        </footer><!-- /#contentinfo -->
 
 </body>
 </html>

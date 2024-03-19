@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Lennart Landsmeer</title><link href="https://blog.llandsmeer.com/" rel="alternate"></link><link href="https://blog.llandsmeer.com/feeds/all.atom.xml" rel="self"></link><id>https://blog.llandsmeer.com/</id><updated>2021-04-13T00:00:00+01:00</updated><entry><title>"Printing p-values using unicode superscripts in R"</title><link href="https://blog.llandsmeer.com/tech/2021/04/13/pval-unicode.html" rel="alternate"></link><published>2021-04-13T00:00:00+01:00</published><updated>2021-04-13T00:00:00+01:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2021-04-13:/tech/2021/04/13/pval-unicode.html</id><summary type="html">&lt;p&gt;This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it …&lt;/p&gt;</summary><content type="html">&lt;p&gt;This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it’s of use to others as well:&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>The Weekend Writeup</title><link href="https://blog.llandsmeer.com/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>https://blog.llandsmeer.com/</id><updated>2021-04-13T00:00:00+01:00</updated><subtitle>Lennart Landsmeer's Personal Blog</subtitle><entry><title>"Printing p-values using unicode superscripts in R"</title><link href="https://blog.llandsmeer.com/tech/2021/04/13/pval-unicode.html" rel="alternate"></link><published>2021-04-13T00:00:00+01:00</published><updated>2021-04-13T00:00:00+01:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2021-04-13:/tech/2021/04/13/pval-unicode.html</id><summary type="html">&lt;p&gt;This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it’s of use to others as well:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="n"&gt;pval&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;function &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ps&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;superscript&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;c&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2070}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{00b9}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{00b2}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{00b3}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2074}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2075}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2076}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2077}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2078}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2079}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nf"&gt;sapply&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ps&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nf"&gt;if &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;is.na&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;return&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nf"&gt;if &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;||&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;return &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;sprintf&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;%.2f&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;p …&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</summary><content type="html">&lt;p&gt;This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it’s of use to others as well:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="n"&gt;pval&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;function &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ps&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;
 &lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;superscript&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nf"&gt;c&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2070}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{00b9}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{00b2}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{00b3}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2074}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
 &lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2075}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2076}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2077}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2078}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;\u{2079}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
@@ -24,7 +30,12 @@
 a region in the brain involved in motor control and learning.
 The lab already produced multi-CPU, multi-GPU and multi-FPGA brain simulators,
 and another student and me thought it would be a cute to add a
-multi-MCU …&lt;/p&gt;</summary><content type="html">&lt;p&gt;For my master's thesis I'm working on computational models of
+multi-MCU simulator as well.
+In this way we would be able to simulate a scalable &lt;a href="real-time"&gt;real time&lt;/a&gt; inferior olive networks where
+rewiring the neural connections
+is just reconnecting wires in an electrical circuit and
+an oscilloscope is the main tool to analyze the network behaviour (instead of python scripts)
+(yes it's …&lt;/p&gt;</summary><content type="html">&lt;p&gt;For my master's thesis I'm working on computational models of
 &lt;a href="https://en.wikipedia.org/wiki/Inferior_olivary_nucleus"&gt;the inferior olivary nucleus&lt;/a&gt;,
 a region in the brain involved in motor control and learning.
 The lab already produced multi-CPU, multi-GPU and multi-FPGA brain simulators,
@@ -134,7 +145,11 @@ cache invalidation, instruction pipelining or frequency scaling :)&lt;/p&gt;</co
 I thought it would be nice to recreate an in-person presenting environment, instead of my regular
 share-slides-and-hear-my-voice-but-don't-see-my-face online presentation. A bit like how
 Daniel Shiffman presents &lt;a href="https://www.youtube.com/channel/UCvjgXvBlbQiydffZU7m1_aw"&gt;The Coding Train&lt;/a&gt; :).&lt;/p&gt;
-&lt;p&gt;In zoom, this …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Today I had to give a presentation on my research for a course to improve my presenting skills.
+&lt;p&gt;In zoom, this is a builtin option. Share desktop as your webcam virtual background.
+Nice, except they decided not to implement this on linux for some reason (WHY?!).
+So I decided to build this myself.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;TLDR&lt;/strong&gt;: If you just want the code: &lt;a href="#full-code"&gt;click here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;There are roughly two ways to go about this …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Today I had to give a presentation on my research for a course to improve my presenting skills.
 I thought it would be nice to recreate an in-person presenting environment, instead of my regular
 share-slides-and-hear-my-voice-but-don't-see-my-face online presentation. A bit like how
 Daniel Shiffman presents &lt;a href="https://www.youtube.com/channel/UCvjgXvBlbQiydffZU7m1_aw"&gt;The Coding Train&lt;/a&gt; :).&lt;/p&gt;
@@ -283,7 +298,10 @@ Good luck presenting :)&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content><category term="tech"></category></entry><entry><title>"Automatically send all Matplotlib plots to your phone via telegram-send"</title><link href="https://blog.llandsmeer.com/tech/2021/04/06/matplotlib-telegram.html" rel="alternate"></link><published>2021-04-06T00:36:00+02:00</published><updated>2021-04-06T00:36:00+02:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2021-04-06:/tech/2021/04/06/matplotlib-telegram.html</id><summary type="html">&lt;p&gt;So I'm not actually sure if this is actually a good idea, but at least its a fun one :).
 For my research I usually run long (&amp;gt;20mins) simulations using quickly written scripts
 and it would be nice if those scripts automagically notified me when they where ready.
-Of course there …&lt;/p&gt;</summary><content type="html">&lt;p&gt;So I'm not actually sure if this is actually a good idea, but at least its a fun one :).
+Of course there are clean solutions to this problem, but they would probaly involve adding
+extra code to the scripts (which I would have to remember doing everytime!) or black box methods
+that would just send a message when a long running python process is done (boring!).&lt;/p&gt;
+&lt;p&gt;Instead, everytime when a python script …&lt;/p&gt;</summary><content type="html">&lt;p&gt;So I'm not actually sure if this is actually a good idea, but at least its a fun one :).
 For my research I usually run long (&amp;gt;20mins) simulations using quickly written scripts
 and it would be nice if those scripts automagically notified me when they where ready.
 Of course there are clean solutions to this problem, but they would probaly involve adding
@@ -345,7 +363,25 @@ on my laptop for simple testing purposes.
 As always, there were some challenges along the way
 and I had to consult multiple installation guides and stackoverflow questions
 to make everything fit together.
-Here is what worked for me …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Today I found myself needing to set up a minimal SLURM cluster
+Here is what worked for me.&lt;/p&gt;
+&lt;h2&gt;Set up munge&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;$&lt;span class="w"&gt; &lt;/span&gt;sudo&lt;span class="w"&gt; &lt;/span&gt;apt&lt;span class="w"&gt; &lt;/span&gt;install&lt;span class="w"&gt; &lt;/span&gt;munge
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Test if it works:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;$&lt;span class="w"&gt; &lt;/span&gt;munge&lt;span class="w"&gt; &lt;/span&gt;-n&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;unmunge
+STATUS:&lt;span class="w"&gt;           &lt;/span&gt;Success&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;[&lt;/span&gt;...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2&gt;Set up MariaDB&lt;/h2&gt;
+&lt;p&gt;&lt;a href="https://github.com/mknoxnv/ubuntu-slurm"&gt;From here&lt;/a&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;$&lt;span class="w"&gt; &lt;/span&gt;sudo&lt;span class="w"&gt; &lt;/span&gt;apt&lt;span class="w"&gt; &lt;/span&gt;install&lt;span class="w"&gt; &lt;/span&gt;mariadb-server
+$&lt;span class="w"&gt; &lt;/span&gt;sudo&lt;span class="w"&gt; &lt;/span&gt;mysql&lt;span class="w"&gt; &lt;/span&gt;-u&lt;span class="w"&gt; &lt;/span&gt;root
+create&lt;span class="w"&gt; &lt;/span&gt;database&lt;span class="w"&gt; &lt;/span&gt;slurm_acct_db&lt;span class="p"&gt;;&lt;/span&gt;
+create&lt;span class="w"&gt; &lt;/span&gt;user&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;slurm&amp;#39;&lt;/span&gt;@&lt;span class="s1"&gt;&amp;#39;localhost&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="nb"&gt;set&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;password&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;slurm&amp;#39;&lt;/span&gt;@&lt;span class="s1"&gt;&amp;#39;localhost&amp;#39;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;password&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;slurmdbpass&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+grant&lt;span class="w"&gt; &lt;/span&gt;usage&lt;span class="w"&gt; &lt;/span&gt;on&lt;span class="w"&gt; &lt;/span&gt;*.*&lt;span class="w"&gt; &lt;/span&gt;to&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;slurm&amp;#39;&lt;/span&gt;@&lt;span class="s1"&gt;&amp;#39;localhost …&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</summary><content type="html">&lt;p&gt;Today I found myself needing to set up a minimal SLURM cluster
 on my laptop for simple testing purposes.
 As always, there were some challenges along the way
 and I had to consult multiple installation guides and stackoverflow questions
@@ -453,7 +489,15 @@ common problem in bioinformatics.
 Different effect/other alleles, variant names, reference genome build,
 chromosome name conventions or just different column names all prevent easy comparison between
 genetic variants.
-&lt;code&gt;gwas2cojo.py&lt;/code&gt; is there to automatically …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Dealing with a gazillion different undocumented notations and conventions
+&lt;code&gt;gwas2cojo.py&lt;/code&gt; is there to automatically convert a GWAS to a certain
+genetic reference.&lt;/p&gt;
+&lt;p&gt;For example,
+in my bachelor end project I had to
+convert the UKBioBank CAD GWAS dataset to a format
+readable by SMR.
+Our genetic dataset and UKBioBank had different ideas 
+about the allele notation for a given variant.
+The effect allele and …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Dealing with a gazillion different undocumented notations and conventions
 for writing down variant information is a
 common problem in bioinformatics.
 Different effect/other alleles, variant names, reference genome build,
@@ -588,7 +632,12 @@ you still need to do manual work in ambiguous cases.&lt;/p&gt;
 how often have you found yourself staring at the screen waiting for &lt;code&gt;grep&lt;/code&gt;
 to find a certain gene or chromosome-basepair location in a gargantuan vcf, bed or gwas file?
 And then realize you forgot adding a field delimiter to your pattern so your search
-included way too …&lt;/p&gt;</summary><content type="html">&lt;p&gt;As a bioinformatician,
+included way too much results?
+Thats a problem I have wanted so solve for a long time.&lt;/p&gt;
+&lt;p&gt;Luckily, these files are usually sorted, which means we should be able to use a binary search!
+So thats what I wrote this weekend;
+a tool you can use to instantly find genomic regions
+in anything …&lt;/p&gt;</summary><content type="html">&lt;p&gt;As a bioinformatician,
 how often have you found yourself staring at the screen waiting for &lt;code&gt;grep&lt;/code&gt;
 to find a certain gene or chromosome-basepair location in a gargantuan vcf, bed or gwas file?
 And then realize you forgot adding a field delimiter to your pattern so your search
@@ -797,7 +846,11 @@ gains. Anyway, if you need a program that's able to recover DEFLATE streams from
 container files, it's &lt;a href="https://github.com/llandsmeer/gzip-random-seek"&gt;available here&lt;/a&gt;.&lt;/p&gt;</content><category term="tech"></category></entry><entry><title>"Serving precompressed static sites using NGINX to save disk space"</title><link href="https://blog.llandsmeer.com/tech/2019/08/29/precompression.html" rel="alternate"></link><published>2019-08-29T21:50:00+02:00</published><updated>2019-08-29T21:50:00+02:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2019-08-29:/tech/2019/08/29/precompression.html</id><summary type="html">&lt;p&gt;I had this idea to build my next ~~app~~ website as a completely static site,
 including all user specific content. So no C# ASP / Flask or React, just static files
 that get regenerated every so often with a cron job.
-The main advantage would be an extremely simple server with …&lt;/p&gt;</summary><content type="html">&lt;p&gt;I had this idea to build my next ~~app~~ website as a completely static site,
+The main advantage would be an extremely simple server with nearly instant page loads, and a disadvantage would be more disk usage.
+It definitely needs some form of authentication, so I still would have to write
+a bit of server code.
+But for a proof of concept,
+I tried to get nginx to serve precompressed files from disk, as most …&lt;/p&gt;</summary><content type="html">&lt;p&gt;I had this idea to build my next ~~app~~ website as a completely static site,
 including all user specific content. So no C# ASP / Flask or React, just static files
 that get regenerated every so often with a cron job.
 The main advantage would be an extremely simple server with nearly instant page loads, and a disadvantage would be more disk usage.
@@ -978,7 +1031,12 @@ To perform precompression using zopfli, use this:&lt;/p&gt;
 &lt;p&gt;Another possibility, of course, is to use a filesystem which has compression built in :).&lt;/p&gt;</content><category term="tech"></category></entry><entry><title>"Building an UEFI x64 kernel from scratch: A long trip to userspace"</title><link href="https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html" rel="alternate"></link><published>2019-07-21T12:00:00+01:00</published><updated>2019-07-21T12:00:00+01:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2019-07-21:/tech/2019/07/21/uefi-x64-userland.html</id><summary type="html">&lt;p&gt;When I just started programming, one of my first major projects was building my own kernel.
 Of course, I failed misserably. But I learned a lot.
 Back then, x64 didn't dominate the market and I never even heard about UEFI.
-Copy pasting code bits from tutorials and forum posts I …&lt;/p&gt;</summary><content type="html">&lt;p&gt;When I just started programming, one of my first major projects was building my own kernel.
+Copy pasting code bits from tutorials and forum posts I ended up
+drawing some things to the screen based on keyboard input.
+However, I never managed to get to userspace (/userland/CPL 3).&lt;/p&gt;
+&lt;p&gt;Things have changed a bit, and
+I decided to finally write a 'modern' UEFI x64 kernel which is able to get to userspace, and document my
+progress …&lt;/p&gt;</summary><content type="html">&lt;p&gt;When I just started programming, one of my first major projects was building my own kernel.
 Of course, I failed misserably. But I learned a lot.
 Back then, x64 didn't dominate the market and I never even heard about UEFI.
 Copy pasting code bits from tutorials and forum posts I ended up
@@ -1544,7 +1602,11 @@ Having a working IDT is also a good idea.&lt;/p&gt;
 &lt;p&gt;Good luck!&lt;/p&gt;</content><category term="tech"></category></entry><entry><title>"Fixing the posix Batch job scheduler by updating its load average limit"</title><link href="https://blog.llandsmeer.com/tech/2019/07/19/at-batch-unix.html" rel="alternate"></link><published>2019-07-19T23:02:00+02:00</published><updated>2019-07-19T23:02:00+02:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2019-07-19:/tech/2019/07/19/at-batch-unix.html</id><summary type="html">&lt;p&gt;&lt;code&gt;batch(1)&lt;/code&gt; is a little known posix command that
 supposedly takes a list of jobs/shell scripts and executes them when the load average of the computer drops below a certain level.
 It's far from an ideal scheduler, but it's builtin and does what is should do.
-Problem is, the …&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;code&gt;batch(1)&lt;/code&gt; is a little known posix command that
+Problem is, the queued commands actually do not execute sometimes.
+The load average limit is 1.5 by default,
+but I have 6 cores/12 threads, so my load average rises easily above that.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;atd(8)&lt;/code&gt; daemon is responsible for job execution.
+Add &lt;code&gt;-l $(your_load_limit)&lt;/code&gt; to the &lt;code&gt;atd&lt;/code&gt; invocation in &lt;code&gt;/etc/systemd …&lt;/code&gt;&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;code&gt;batch(1)&lt;/code&gt; is a little known posix command that
 supposedly takes a list of jobs/shell scripts and executes them when the load average of the computer drops below a certain level.
 It's far from an ideal scheduler, but it's builtin and does what is should do.
 Problem is, the queued commands actually do not execute sometimes.
@@ -1575,7 +1637,12 @@ linear PDE as a matrix multiplication $$\phi_{n+1}=C \phi_n$$.
 Nonlinear PDE's pose some additional
 problems, but are solvable as well this way (by linearizing every timestep).
 A major advantage here
-is that going $$k$$ steps into the future is just $$\phi_ …&lt;/p&gt;</summary><content type="html">&lt;p&gt;The &lt;a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method"&gt;Crank-Nicolson&lt;/a&gt; method rewrites a discrete time
+is that going $$k$$ steps into the future is just $$\phi_{n+k}=C^{k}\phi_n$$,
+and calculating a &lt;a href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.matrix_power.html"&gt;matrix power&lt;/a&gt; is polynomial time.
+The method is in general very stable.&lt;/p&gt;
+&lt;p&gt;For an assignment I had to construct the Crank-Nicolson
+matrix for a simple linear 1 dimension PDE, which had to be derived by hand.
+That's a bit labourus, so I …&lt;/p&gt;</summary><content type="html">&lt;p&gt;The &lt;a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method"&gt;Crank-Nicolson&lt;/a&gt; method rewrites a discrete time
 linear PDE as a matrix multiplication $$\phi_{n+1}=C \phi_n$$.
 Nonlinear PDE's pose some additional
 problems, but are solvable as well this way (by linearizing every timestep).
@@ -1832,7 +1899,11 @@ since they have $$(WH)^2$$ elements, of which most are 0.&lt;/p&gt;
 I found myself looking for a solution to overwrite (monkey patch)
 a function in the compiled C code.
 On linux, this is normally possible with &lt;code&gt;LD_PRELOAD&lt;/code&gt;,
-which enables you to prepend a library in the dynamic linker search …&lt;/p&gt;</summary><content type="html">&lt;p&gt;In a ~~failed~~ attempt to speed up CPython using a C++ extension,
+which enables you to prepend a library in the dynamic linker search path.
+When your program requests an external function like &lt;code&gt;malloc&lt;/code&gt;, the dynamic linker
+starts searching for it and hopefully finds it in your prepended library.
+The program will then call that function instead of the version from say, &lt;code&gt;glibc&lt;/code&gt;.
+However, this was not a possibility here, as I wanted to …&lt;/p&gt;</summary><content type="html">&lt;p&gt;In a ~~failed~~ attempt to speed up CPython using a C++ extension,
 I found myself looking for a solution to overwrite (monkey patch)
 a function in the compiled C code.
 On linux, this is normally possible with &lt;code&gt;LD_PRELOAD&lt;/code&gt;,
@@ -1903,7 +1974,14 @@ is then written at function entry.&lt;/p&gt;
 which calls the code in my extension. After monkey patching the CPU would continue
 executing inside PyEval_EvalCode() (+0x23), so I included an offset parameter which
 allows you to set the overwrite point inside a function.&lt;/p&gt;
-&lt;p&gt;Feel free to use it as you want to use, but expect things to break :).&lt;/p&gt;</content><category term="tech"></category></entry><entry><title>"Recursive sata structures: Catamorphism with context"</title><link href="https://blog.llandsmeer.com/tech/2019/02/16/ctxm.html" rel="alternate"></link><published>2019-02-16T01:20:00+01:00</published><updated>2019-02-16T01:20:00+01:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2019-02-16:/tech/2019/02/16/ctxm.html</id><summary type="html">&lt;p&gt;In haskell, the &lt;code&gt;Fix f&lt;/code&gt; data type allows you to specify a recursive datatype from its fixpoint.  Folds and unfolds, as catamorphisms and anamorphisms, come for free. With these &lt;em&gt;recursion schemes&lt;/em&gt;, functions can be specified over the data type without explicit recursion. A catamorphism folds bottom-top to a single value …&lt;/p&gt;</summary><content type="html">&lt;p&gt;In haskell, the &lt;code&gt;Fix f&lt;/code&gt; data type allows you to specify a recursive datatype from its fixpoint.  Folds and unfolds, as catamorphisms and anamorphisms, come for free. With these &lt;em&gt;recursion schemes&lt;/em&gt;, functions can be specified over the data type without explicit recursion. A catamorphism folds bottom-top to a single value, while its dual the anamorphism can be used to unfold a single value.&lt;/p&gt;
+&lt;p&gt;Feel free to use it as you want to use, but expect things to break :).&lt;/p&gt;</content><category term="tech"></category></entry><entry><title>"Recursive sata structures: Catamorphism with context"</title><link href="https://blog.llandsmeer.com/tech/2019/02/16/ctxm.html" rel="alternate"></link><published>2019-02-16T01:20:00+01:00</published><updated>2019-02-16T01:20:00+01:00</updated><author><name>Lennart Landsmeer</name></author><id>tag:blog.llandsmeer.com,2019-02-16:/tech/2019/02/16/ctxm.html</id><summary type="html">&lt;p&gt;In haskell, the &lt;code&gt;Fix f&lt;/code&gt; data type allows you to specify a recursive datatype from its fixpoint.  Folds and unfolds, as catamorphisms and anamorphisms, come for free. With these &lt;em&gt;recursion schemes&lt;/em&gt;, functions can be specified over the data type without explicit recursion. A catamorphism folds bottom-top to a single value, while its dual the anamorphism can be used to unfold a single value.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="kr"&gt;newtype&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;unFix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;::&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="nf"&gt;cata&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;::&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Functor&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;=&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;
+&lt;span class="nf"&gt;cata&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;alg&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;alg&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;fmap&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cata&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;alg&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;unFix&lt;/span&gt;
+
+&lt;span class="nf"&gt;ana&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;::&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Functor&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;=&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;
+&lt;span class="nf"&gt;ana&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;coalg&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;fmap …&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</summary><content type="html">&lt;p&gt;In haskell, the &lt;code&gt;Fix f&lt;/code&gt; data type allows you to specify a recursive datatype from its fixpoint.  Folds and unfolds, as catamorphisms and anamorphisms, come for free. With these &lt;em&gt;recursion schemes&lt;/em&gt;, functions can be specified over the data type without explicit recursion. A catamorphism folds bottom-top to a single value, while its dual the anamorphism can be used to unfold a single value.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="kr"&gt;newtype&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;unFix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;::&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
 
 &lt;span class="nf"&gt;cata&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;::&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Functor&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;=&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="kt"&gt;Fix&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="ow"&gt;-&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;

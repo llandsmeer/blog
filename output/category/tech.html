@@ -4,33 +4,29 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="generator" content="Pelican" />
-        <title>Lennart Landsmeer - tech</title>
+        <title>The Weekend Writeup - tech</title>
         <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
-        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="The Weekend Writeup Atom Feed" />
 </head>
 
 <body id="index" class="home">
         <header id="banner" class="body">
-                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <h1><a href="https://blog.llandsmeer.com/">The Weekend Writeup <strong>Lennart Landsmeer's Personal Blog</strong></a></h1>
                 <nav><ul>
-                    <li class="active"><a href="https://blog.llandsmeer.com/category/tech.html">tech</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="https://blog.llandsmeer.com/tech/2021/04/13/pval-unicode.html">"Printing p-values using unicode superscripts in R"</a></h1>
+                    <h2>Last article:</h2>
+                    <h1 class="entry-title"><a href="https://blog.llandsmeer.com/tech/2021/04/13/pval-unicode.html">Printing p-values using unicode superscripts in R</a></h1>
 <footer class="post-info">
         <abbr class="published" title="2021-04-13T00:00:00+01:00">
-                Published: di 13 april 2021
+        13 apr 2021
         </abbr>
 
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
 
-</footer><!-- /.post-info --><p>This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it’s of use to others as well:</p>
+</footer><!-- /.post-info -->                    <p>This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it’s of use to others as well:</p>
 <div class="highlight"><pre><span></span><code><span class="n">pval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">function </span><span class="p">(</span><span class="n">ps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">superscript</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s">&#39;\u{2070}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b9}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b2}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b3}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2074}&#39;</span><span class="p">,</span>
 <span class="w">                    </span><span class="s">&#39;\u{2075}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2076}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2077}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2078}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2079}&#39;</span><span class="p">)</span>
@@ -60,26 +56,21 @@
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2021/04/08/esp32-s2-fpu.html" rel="bookmark"
-                           title="Permalink to "No, the ESP32-S2 is not faster at floating point operations (and how do you actually speed up division on the ESP32?)"">"No, the ESP32-S2 is <i>not</i> faster at floating point operations (and how do you actually speed up division on the ESP32?)"</a></h1>
+                           title="Permalink to "No, the ESP32-S2 is not faster at floating point operations (and how do you actually speed up division on the ESP32?)"">No, the ESP32-S2 is <i>not</i> faster at floating point operations (and how do you actually speed up division on the ESP32?)</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2021-04-08T23:24:36+02:00">
-                Published: do 08 april 2021
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>For my master's thesis I'm working on computational models of
+                <p>For my master's thesis I'm working on computational models of
 <a href="https://en.wikipedia.org/wiki/Inferior_olivary_nucleus">the inferior olivary nucleus</a>,
 a region in the brain involved in motor control and learning.
 The lab already produced multi-CPU, multi-GPU and multi-FPGA brain simulators,
 and another student and me thought it would be a cute to add a
-multi-MCU …</p>
+multi-MCU simulator as well.
+In this way we would be able to simulate a scalable <a href="real-time">real time</a> inferior olive networks where
+rewiring the neural connections
+is just reconnecting wires in an electrical circuit and
+an oscilloscope is the main tool to analyze the network behaviour (instead of python scripts)
+(yes it's …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2021/04/08/esp32-s2-fpu.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -87,25 +78,19 @@ multi-MCU …</p>
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2021/04/07/webcam-overlay.html" rel="bookmark"
-                           title="Permalink to "Online presenting in front of your slides with a transparent GTK window and OpenCV"">"Online presenting in front of your slides with a transparent GTK window and OpenCV"</a></h1>
+                           title="Permalink to "Online presenting in front of your slides with a transparent GTK window and OpenCV"">Online presenting in front of your slides with a transparent GTK window and OpenCV</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2021-04-07T17:00:00+01:00">
-                Published: wo 07 april 2021
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>Today I had to give a presentation on my research for a course to improve my presenting skills.
+                <p>Today I had to give a presentation on my research for a course to improve my presenting skills.
 I thought it would be nice to recreate an in-person presenting environment, instead of my regular
 share-slides-and-hear-my-voice-but-don't-see-my-face online presentation. A bit like how
 Daniel Shiffman presents <a href="https://www.youtube.com/channel/UCvjgXvBlbQiydffZU7m1_aw">The Coding Train</a> :).</p>
-<p>In zoom, this …</p>
+<p>In zoom, this is a builtin option. Share desktop as your webcam virtual background.
+Nice, except they decided not to implement this on linux for some reason (WHY?!).
+So I decided to build this myself.</p>
+<p><strong>TLDR</strong>: If you just want the code: <a href="#full-code">click here</a></p>
+<p>There are roughly two ways to go about this …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2021/04/07/webcam-overlay.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -113,24 +98,17 @@ Daniel Shiffman presents <a href="https://www.youtube.com/channel/UCvjgXvBlbQiyd
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2021/04/06/matplotlib-telegram.html" rel="bookmark"
-                           title="Permalink to "Automatically send all Matplotlib plots to your phone via telegram-send"">"Automatically send all Matplotlib plots to your phone via telegram-send"</a></h1>
+                           title="Permalink to "Automatically send all Matplotlib plots to your phone via telegram-send"">Automatically send all Matplotlib plots to your phone via telegram-send</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2021-04-06T00:36:00+02:00">
-                Published: di 06 april 2021
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>So I'm not actually sure if this is actually a good idea, but at least its a fun one :).
+                <p>So I'm not actually sure if this is actually a good idea, but at least its a fun one :).
 For my research I usually run long (&gt;20mins) simulations using quickly written scripts
 and it would be nice if those scripts automagically notified me when they where ready.
-Of course there …</p>
+Of course there are clean solutions to this problem, but they would probaly involve adding
+extra code to the scripts (which I would have to remember doing everytime!) or black box methods
+that would just send a message when a long running python process is done (boring!).</p>
+<p>Instead, everytime when a python script …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2021/04/06/matplotlib-telegram.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -138,26 +116,34 @@ Of course there …</p>
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2020/03/02/slurm-single-instance.html" rel="bookmark"
-                           title="Permalink to "Running SLURM locally on Ubuntu 18.04"">"Running SLURM locally on Ubuntu 18.04"</a></h1>
+                           title="Permalink to "Running SLURM locally on Ubuntu 18.04"">Running SLURM locally on Ubuntu 18.04</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2020-03-02T15:43:00+01:00">
-                Published: ma 02 maart 2020
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>Today I found myself needing to set up a minimal SLURM cluster
+                <p>Today I found myself needing to set up a minimal SLURM cluster
 on my laptop for simple testing purposes.
 As always, there were some challenges along the way
 and I had to consult multiple installation guides and stackoverflow questions
 to make everything fit together.
-Here is what worked for me …</p>
+Here is what worked for me.</p>
+<h2>Set up munge</h2>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>munge
+</code></pre></div>
+
+<p>Test if it works:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>munge<span class="w"> </span>-n<span class="w"> </span><span class="p">|</span><span class="w"> </span>unmunge
+STATUS:<span class="w">           </span>Success<span class="w"> </span><span class="o">(</span><span class="m">0</span><span class="o">)</span>
+<span class="o">[</span>...<span class="o">]</span>
+</code></pre></div>
+
+<h2>Set up MariaDB</h2>
+<p><a href="https://github.com/mknoxnv/ubuntu-slurm">From here</a></p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>mariadb-server
+$<span class="w"> </span>sudo<span class="w"> </span>mysql<span class="w"> </span>-u<span class="w"> </span>root
+create<span class="w"> </span>database<span class="w"> </span>slurm_acct_db<span class="p">;</span>
+create<span class="w"> </span>user<span class="w"> </span><span class="s1">&#39;slurm&#39;</span>@<span class="s1">&#39;localhost&#39;</span><span class="p">;</span>
+<span class="nb">set</span><span class="w"> </span>password<span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="s1">&#39;slurm&#39;</span>@<span class="s1">&#39;localhost&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>password<span class="o">(</span><span class="s1">&#39;slurmdbpass&#39;</span><span class="o">)</span><span class="p">;</span>
+grant<span class="w"> </span>usage<span class="w"> </span>on<span class="w"> </span>*.*<span class="w"> </span>to<span class="w"> </span><span class="s1">&#39;slurm&#39;</span>@<span class="s1">&#39;localhost …</span></code></pre></div>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2020/03/02/slurm-single-instance.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -165,27 +151,25 @@ Here is what worked for me …</p>
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2019/12/28/gwas2cojo.html" rel="bookmark"
-                           title="Permalink to "Aligning a GWAS to a genetic reference with gwas2cojo.py"">"Aligning a GWAS to a genetic reference with gwas2cojo.py"</a></h1>
+                           title="Permalink to "Aligning a GWAS to a genetic reference with gwas2cojo.py"">Aligning a GWAS to a genetic reference with gwas2cojo.py</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2019-12-28T21:07:00+01:00">
-                Published: za 28 december 2019
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>Dealing with a gazillion different undocumented notations and conventions
+                <p>Dealing with a gazillion different undocumented notations and conventions
 for writing down variant information is a
 common problem in bioinformatics.
 Different effect/other alleles, variant names, reference genome build,
 chromosome name conventions or just different column names all prevent easy comparison between
 genetic variants.
-<code>gwas2cojo.py</code> is there to automatically …</p>
+<code>gwas2cojo.py</code> is there to automatically convert a GWAS to a certain
+genetic reference.</p>
+<p>For example,
+in my bachelor end project I had to
+convert the UKBioBank CAD GWAS dataset to a format
+readable by SMR.
+Our genetic dataset and UKBioBank had different ideas 
+about the allele notation for a given variant.
+The effect allele and …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/12/28/gwas2cojo.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -193,25 +177,20 @@ genetic variants.
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2019/12/28/search-sorted.html" rel="bookmark"
-                           title="Permalink to "Fast searching in a sorted genetics file & the curse of gzip compression"">"Fast searching in a sorted genetics file & the curse of gzip compression"</a></h1>
+                           title="Permalink to "Fast searching in a sorted genetics file & the curse of gzip compression"">Fast searching in a sorted genetics file & the curse of gzip compression</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2019-12-28T21:07:00+01:00">
-                Published: za 28 december 2019
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>As a bioinformatician,
+                <p>As a bioinformatician,
 how often have you found yourself staring at the screen waiting for <code>grep</code>
 to find a certain gene or chromosome-basepair location in a gargantuan vcf, bed or gwas file?
 And then realize you forgot adding a field delimiter to your pattern so your search
-included way too …</p>
+included way too much results?
+Thats a problem I have wanted so solve for a long time.</p>
+<p>Luckily, these files are usually sorted, which means we should be able to use a binary search!
+So thats what I wrote this weekend;
+a tool you can use to instantly find genomic regions
+in anything …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/12/28/search-sorted.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -219,24 +198,18 @@ included way too …</p>
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2019/08/29/precompression.html" rel="bookmark"
-                           title="Permalink to "Serving precompressed static sites using NGINX to save disk space"">"Serving precompressed static sites using NGINX to save disk space"</a></h1>
+                           title="Permalink to "Serving precompressed static sites using NGINX to save disk space"">Serving precompressed static sites using NGINX to save disk space</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2019-08-29T21:50:00+02:00">
-                Published: do 29 augustus 2019
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>I had this idea to build my next ~~app~~ website as a completely static site,
+                <p>I had this idea to build my next ~~app~~ website as a completely static site,
 including all user specific content. So no C# ASP / Flask or React, just static files
 that get regenerated every so often with a cron job.
-The main advantage would be an extremely simple server with …</p>
+The main advantage would be an extremely simple server with nearly instant page loads, and a disadvantage would be more disk usage.
+It definitely needs some form of authentication, so I still would have to write
+a bit of server code.
+But for a proof of concept,
+I tried to get nginx to serve precompressed files from disk, as most …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/08/29/precompression.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -244,24 +217,19 @@ The main advantage would be an extremely simple server with …</p>
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html" rel="bookmark"
-                           title="Permalink to "Building an UEFI x64 kernel from scratch: A long trip to userspace"">"Building an UEFI x64 kernel from scratch: A long trip to userspace"</a></h1>
+                           title="Permalink to "Building an UEFI x64 kernel from scratch: A long trip to userspace"">Building an UEFI x64 kernel from scratch: A long trip to userspace</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2019-07-21T12:00:00+01:00">
-                Published: zo 21 juli 2019
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p>When I just started programming, one of my first major projects was building my own kernel.
+                <p>When I just started programming, one of my first major projects was building my own kernel.
 Of course, I failed misserably. But I learned a lot.
 Back then, x64 didn't dominate the market and I never even heard about UEFI.
-Copy pasting code bits from tutorials and forum posts I …</p>
+Copy pasting code bits from tutorials and forum posts I ended up
+drawing some things to the screen based on keyboard input.
+However, I never managed to get to userspace (/userland/CPL 3).</p>
+<p>Things have changed a bit, and
+I decided to finally write a 'modern' UEFI x64 kernel which is able to get to userspace, and document my
+progress …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -269,24 +237,18 @@ Copy pasting code bits from tutorials and forum posts I …</p>
             <li><article class="hentry">
                 <header>
                     <h1><a href="https://blog.llandsmeer.com/tech/2019/07/19/at-batch-unix.html" rel="bookmark"
-                           title="Permalink to "Fixing the posix Batch job scheduler by updating its load average limit"">"Fixing the posix Batch job scheduler by updating its load average limit"</a></h1>
+                           title="Permalink to "Fixing the posix Batch job scheduler by updating its load average limit"">Fixing the posix Batch job scheduler by updating its load average limit</a></h1>
                 </header>
 
                 <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2019-07-19T23:02:00+02:00">
-                Published: vr 19 juli 2019
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
-        </address>
-<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
-
-</footer><!-- /.post-info -->                <p><code>batch(1)</code> is a little known posix command that
+                <p><code>batch(1)</code> is a little known posix command that
 supposedly takes a list of jobs/shell scripts and executes them when the load average of the computer drops below a certain level.
 It's far from an ideal scheduler, but it's builtin and does what is should do.
-Problem is, the …</p>
+Problem is, the queued commands actually do not execute sometimes.
+The load average limit is 1.5 by default,
+but I have 6 cores/12 threads, so my load average rises easily above that.</p>
+<p>The <code>atd(8)</code> daemon is responsible for job execution.
+Add <code>-l $(your_load_limit)</code> to the <code>atd</code> invocation in <code>/etc/systemd …</code></p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/07/19/at-batch-unix.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
@@ -300,33 +262,7 @@ Problem is, the …</p>
 </nav>
                 </section><!-- /#content -->
         <section id="extras" class="body">
-                <div class="blogroll">
-                        <h2>links</h2>
-                        <ul>
-                            <li><a href="https://github.com/llandsmeer">Github</a></li>
-                            <li><a href="https://www.python.org/">Python.org</a></li>
-                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
-                            <li><a href="#">You can modify those links in your config file</a></li>
-                        </ul>
-                </div><!-- /.blogroll -->
-                <div class="social">
-                        <h2>social</h2>
-                        <ul>
-                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
-
-                            <li><a href="#">You can add links in your config file</a></li>
-                            <li><a href="#">Another social link</a></li>
-                        </ul>
-                </div><!-- /.social -->
         </section><!-- /#extras -->
-
-        <footer id="contentinfo" class="body">
-                <address id="about" class="vcard body">
-                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
-                </address><!-- /#about -->
-
-                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
-        </footer><!-- /#contentinfo -->
 
 </body>
 </html>

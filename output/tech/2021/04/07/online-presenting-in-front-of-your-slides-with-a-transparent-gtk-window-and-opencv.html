@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Online presenting in front of your slides with a transparent GTK window and OpenCV"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <meta name="description" content="Today I had to give a presentation on my research for a course to improve my presenting skills. I thought it would be nice to recreate an..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://blog.llandsmeer.com/category/tech.html">tech</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/tech/2021/04/07/online-presenting-in-front-of-your-slides-with-a-transparent-gtk-window-and-opencv.html" rel="bookmark"
+           title="Permalink to "Online presenting in front of your slides with a transparent GTK window and OpenCV"">"Online presenting in front of your slides with a transparent GTK window and OpenCV"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2021-04-07T17:00:00+01:00">
+                Published: wo 07 april 2021
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart-landsmeer.html">Lennart Landsmeer</a>
+        </address>
+<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
+
+</footer><!-- /.post-info -->      <p>Today I had to give a presentation on my research for a course to improve my presenting skills.
+I thought it would be nice to recreate an in-person presenting environment, instead of my regular
+share-slides-and-hear-my-voice-but-don't-see-my-face online presentation. A bit like how
+Daniel Shiffman presents <a href="https://www.youtube.com/channel/UCvjgXvBlbQiydffZU7m1_aw">The Coding Train</a> :).</p>
+<p>In zoom, this is a builtin option. Share desktop as your webcam virtual background.
+Nice, except they decided not to implement this on linux for some reason (WHY?!).
+So I decided to build this myself.</p>
+<p><strong>TLDR</strong>: If you just want the code: <a href="#full-code">click here</a></p>
+<p>There are roughly two ways to go about this.
+Initially I tried writing a program that takes frames from the desktop and webcam,
+combines them and then presents itself as a new webcam available in your favorite streaming program.
+For this I used <a href="https://abhitronix.github.io/vidgear/latest/bonus/reference/screengear/">vidgear.gears.ScreenGear</a>,
+which ended up introducing a &gt;10 second delay.
+This is probably fixable, but I deciced to pursue a different route.</p>
+<p>Instead, I wrote a program that displays your webcam directly on your desktop.
+Yes, there are a lot of programs that do that, but this one is transparent where it detects a white wall.
+So after starting the program you just turn on screen sharing and give your presentation :)</p>
+<p>Figuring out <em>how</em> to do this was a bit harder. Most graphical interface python libraries out there
+do not support transparent windows. The only options seemed to be GTK and OpenGL.
+PyQT5 supposedly supports it but I couldn't figure out how. Python GTK documentation is a bit hard to
+read, but after a while I figured it out:</p>
+<p>Luckily <a href="https://gist.github.com/KurtJacobson/374c8cb83aee4851d39981b9c7e2c22c">Kurt Jacobson</a>
+provided a gist (MIT licensed) that shows how to make a transparent window.
+Next we need to draw our webcam image. Here's the procedure:</p>
+<h2>How to draw a numpy array in GTK/Cairo</h2>
+<p>Set up OpenCV to capture your webcam and obtain a frame.</p>
+<div class="highlight"><pre><span></span><code><span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">cameraid</span><span class="p">)</span>
+<span class="n">ret</span><span class="p">,</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">cap</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</code></pre></div>
+
+<p>Apparantly there are three different ways of drawing images to a GTK window,
+the cairo method being the fastest. To convert your numpy array to a cairo surface:</p>
+<div class="highlight"><pre><span></span><code><span class="n">frame</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">frame</span><span class="p">[:,:,::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGBA</span><span class="p">)</span>
+<span class="c1"># {.. insert code to modify alpha channel here..}</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">cairo</span><span class="o">.</span><span class="n">ImageSurface</span><span class="o">.</span><span class="n">create_for_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cairo</span><span class="o">.</span><span class="n">FORMAT_ARGB32</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>ImageSurface.create_for_data</code> allocates memory and copies the numpy array into that memory.
+That's an expensive operation you do not want to do every frame. So every frame after that
+(of the same size), you should just copy over:</p>
+<div class="highlight"><pre><span></span><code><span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+</code></pre></div>
+
+<p>And then its a simple</p>
+<div class="highlight"><pre><span></span><code><span class="n">context</span><span class="o">.</span><span class="n">set_source_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">context</span><span class="o">.</span><span class="n">paint</span><span class="p">()</span>
+</code></pre></div>
+
+<h2>Full code</h2>
+<p>Here is the script. Run it as any other python program (after installing the dependencies).
+Point your webcam at a white surface and go stand in front of it.
+You can use <code>j</code>/<code>k</code> to change the transparancy gradient steepness and <code>h</code>/<code>l</code> to change the threshold value.
+Change the <code>cameraid</code> value to switch webcams.
+Good luck presenting :)</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">cairo</span>
+<span class="kn">import</span> <span class="nn">gi</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+
+<span class="n">gi</span><span class="o">.</span><span class="n">require_version</span><span class="p">(</span><span class="s1">&#39;Gtk&#39;</span><span class="p">,</span> <span class="s1">&#39;3.0&#39;</span><span class="p">)</span>
+<span class="n">gi</span><span class="o">.</span><span class="n">require_version</span><span class="p">(</span><span class="s1">&#39;Gdk&#39;</span><span class="p">,</span> <span class="s1">&#39;3.0&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">gi.repository</span> <span class="kn">import</span> <span class="n">Gtk</span>
+<span class="kn">from</span> <span class="nn">gi.repository</span> <span class="kn">import</span> <span class="n">Gdk</span><span class="p">,</span> <span class="n">GdkPixbuf</span>
+
+<span class="k">class</span> <span class="nc">TransparentWindow</span><span class="p">(</span><span class="n">Gtk</span><span class="o">.</span><span class="n">Window</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cameraid</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">Gtk</span><span class="o">.</span><span class="n">Window</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;destroy&#39;</span><span class="p">,</span> <span class="n">Gtk</span><span class="o">.</span><span class="n">main_quit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;draw&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">)</span>
+
+        <span class="n">screen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_screen</span><span class="p">()</span>
+        <span class="n">visual</span> <span class="o">=</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_rgba_visual</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">visual</span> <span class="ow">and</span> <span class="n">screen</span><span class="o">.</span><span class="n">is_composited</span><span class="p">():</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_visual</span><span class="p">(</span><span class="n">visual</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_app_paintable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_all</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;key_press_event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_keypress</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">cameraid</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cap</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">_C</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_size_request</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">handle_keypress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">widget</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">keyval</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;k&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">+=</span> <span class="mf">0.5</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">keyval</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;j&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">-=</span> <span class="mf">0.5</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">keyval</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;l&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">keyval</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;h&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">keyval</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">widget</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="n">W</span><span class="p">,</span> <span class="n">H</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span>
+        <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cap</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[:,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">gray</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">frame</span><span class="p">[:,:,::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGBA</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="o">-</span><span class="n">gray</span><span class="p">)</span><span class="o">/</span><span class="mi">255</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span>
+        <span class="n">mm</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span> <span class="o">&lt;</span> <span class="mi">50</span><span class="p">)</span><span class="o">*</span><span class="mi">255</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">*</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span> <span class="c1">#+ 0.1 * mm</span>
+        <span class="n">frame</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">/</span><span class="mi">255</span>
+        <span class="n">frame</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">/</span><span class="mi">255</span>
+        <span class="n">frame</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">/</span><span class="mi">255</span>
+        <span class="n">frame</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">_C</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">scale</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">w</span><span class="o">/</span><span class="n">W</span><span class="p">,</span> <span class="n">h</span><span class="o">/</span><span class="n">H</span><span class="p">)</span>
+
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">W</span><span class="o">*</span><span class="n">scale</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">H</span><span class="o">*</span><span class="n">scale</span><span class="p">)))</span>
+
+        <span class="n">img</span> <span class="o">=</span> <span class="n">frame</span>
+        <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">img</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_data</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">flatten</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">cairo</span><span class="o">.</span><span class="n">ImageSurface</span><span class="o">.</span><span class="n">create_for_data</span><span class="p">(</span>
+                            <span class="n">data</span><span class="p">,</span> <span class="n">cairo</span><span class="o">.</span><span class="n">FORMAT_ARGB32</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+
+        <span class="n">context</span><span class="o">.</span><span class="n">set_source_rgba</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">set_operator</span><span class="p">(</span><span class="n">cairo</span><span class="o">.</span><span class="n">OPERATOR_SOURCE</span><span class="p">)</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">paint</span><span class="p">()</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">set_operator</span><span class="p">(</span><span class="n">cairo</span><span class="o">.</span><span class="n">OPERATOR_OVER</span><span class="p">)</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">set_source_surface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">paint</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue_draw</span><span class="p">()</span>
+
+<span class="n">win</span> <span class="o">=</span> <span class="n">TransparentWindow</span><span class="p">()</span>
+<span class="n">Gtk</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://github.com/llandsmeer">Github</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

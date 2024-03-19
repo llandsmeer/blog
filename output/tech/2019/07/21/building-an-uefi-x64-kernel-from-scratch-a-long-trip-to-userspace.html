@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Building an UEFI x64 kernel from scratch: A long trip to userspace"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <meta name="description" content="When I just started programming, one of my first major projects was building my own kernel. Of course, I failed misserably. But I learned a lot...." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://blog.llandsmeer.com/category/tech.html">tech</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/tech/2019/07/21/building-an-uefi-x64-kernel-from-scratch-a-long-trip-to-userspace.html" rel="bookmark"
+           title="Permalink to "Building an UEFI x64 kernel from scratch: A long trip to userspace"">"Building an UEFI x64 kernel from scratch: A long trip to userspace"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2019-07-21T12:00:00+01:00">
+                Published: zo 21 juli 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart-landsmeer.html">Lennart Landsmeer</a>
+        </address>
+<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
+
+</footer><!-- /.post-info -->      <p>When I just started programming, one of my first major projects was building my own kernel.
+Of course, I failed misserably. But I learned a lot.
+Back then, x64 didn't dominate the market and I never even heard about UEFI.
+Copy pasting code bits from tutorials and forum posts I ended up
+drawing some things to the screen based on keyboard input.
+However, I never managed to get to userspace (/userland/CPL 3).</p>
+<p>Things have changed a bit, and
+I decided to finally write a 'modern' UEFI x64 kernel which is able to get to userspace, and document my
+progress.
+In kernel development, nothing is easy, and found myself repeatedly in painful late night debugging sessions
+chasing strange kernel bugs.
+I cut a few corners short, and found some nice tricks
+to hack you way throught the standards in ways you shouldn't do,
+but in the end, I finally got my kernel in functioning state in userspace.</p>
+<p>For me, the most important lesson was maybe,
+that copy pasting bits from the internet
+will not help too much when building a kernel.
+You just have to read the Intel manuals really
+carefully. Luckily, they are quite readable.</p>
+<p>This post is just to get you started, as figuring
+the right way to configure your GDT or setting up
+a minimal identity mapping can be very boring.
+I hope someone can learn something from it :)</p>
+<h1>Sysret</h1>
+<p>With the x86_64 architecture, a new faster method to
+switch between kernel and userspace was added: the
+<code>syscall</code>/<code>sysret</code> instructions. <code>syscall</code>
+jumps from userspace to the kernel, and then the kernel
+returns to userspace using <code>sysret</code>.
+While this is a lot easier to program for than syscalls via interrupts,
+a lot of work needs to be done before we can use them.</p>
+<p>To quote the Intel Instruction Set Reference, N-Z, Vol. 2B 4-469, SYSRET:</p>
+<blockquote>
+<p>Upon return, SYSRET copies the value saved in RCX to the RIP.</p>
+<p>In a return to 64-bit mode using Osize 64, SYSRET sets the CS selector value to MSR
+IA32_STAR[63:48] +16. The SS is set to IA32_STAR[63:48] + 8.</p>
+</blockquote>
+<p>So we need a GDT with the correct segments in correct order and load that into the STAR
+model specific register (MSR).
+Furthermore, a paging setup that allows userspace code executablion.
+For paging, we could pre allocate all page structures, but the Correct Way&trade; is to
+have a page allocator do that dynamically for us. And for a page allocator,
+we need to know which memory is available, by using the UEFI API.</p>
+<h1>Development Setup</h1>
+<p>There are good instruction on
+<a href="https://wiki.osdev.org/UEFI_Bare_Bones">the osdev wiki</a> on setting up a minimal UEFI x64 application
+(the osdev wiki in general is an invaluable resource).
+They use linux and GNU-EFI.
+Depending on your setup, Tianocore EDK II might be more suitable.
+In that case the UEFI calls change <a href="https://www.rodsbooks.com/efi-programming/efi_services.html">a bit</a> (no initialization of globals,
+<code>BS</code> becomes <code>gBS</code> and no uefi_call_wrapper()).
+Littered around the internet numerous instructions can be found on how to set up the development
+environment so I won't include it here.
+The intel style assembly code included in this post was taken from a global
+<code>asm("..\n...")</code> block in the C code with <code>-masm=intel</code> GCC flag.
+Anyway, the kernel code here should work regardless of the development setup.
+A minimal UEFI application looks like this:</p>
+<div class="highlight"><pre><span></span><code><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;efi.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;efilib.h&gt;</span>
+
+<span class="n">EFI_STATUS</span>
+<span class="n">EFIAPI</span>
+<span class="n">efi_main</span><span class="p">(</span><span class="n">EFI_HANDLE</span><span class="w"> </span><span class="n">ImageHandle</span><span class="p">,</span><span class="w"> </span><span class="n">EFI_SYSTEM_TABLE</span><span class="w"> </span><span class="o">*</span><span class="n">SystemTable</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">InitializeLib</span><span class="p">(</span><span class="n">ImageHandle</span><span class="p">,</span><span class="w"> </span><span class="n">SystemTable</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">EFI_SUCCESS</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h1>Debugging your UEFI OS Loader</h1>
+<p>You're free to do this in whatever way you want, but here is how I did it.</p>
+<p>Debugging a kernel is hard. That's also what makes it a fun challenge, most of the time :).
+For an UEFI OS loader this is even a bit harder, as we're not left in a
+simple VGA text mode where we can write characters to a known memory location.
+Instead we have to use the UEFI Console Services.
+However, quite early, after loading our own GDT this is not supported anymore
+and we're left in the dark.
+By leaving code and data segments that correspond to the ones that
+are expected by OVMF (the UEFI implementation I use) in qemu and not exiting boot services, you can still access them in a very hackish way.
+You can find those segments by reading the <code>CS</code> and <code>DS</code> registers, eg. by a triple fault
+with the <code>-d cpu_reset</code> qemu flag.</p>
+<p>Then, qemu allows for the attachment of gdb with <code>-S -gdb tcp::9000</code>.
+Fire up gdb and type <code>target remote localhost:9000</code>.
+I didn't use that.
+The <code>-no-reboot -no-shutdown</code> qemu flags are good for debugging triple faults,
+by stopping it from going into a reboot loop.
+With <code>-d int,cpu_reset</code> you get very verbose information on interupts and cpu resets.</p>
+<p>The method I found most useful was downloading the qemu sourcecode and patching
+it with logging statements when exceptions occurred.
+This gives you access to the complete internal CPU state which is extremely useful.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span><span class="s1">&#39;https://github.com/qemu/qemu/&#39;</span><span class="w"> </span>qemu
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>qemu
+$<span class="w"> </span>./configure
+$<span class="w"> </span>make<span class="w"> </span>x86_64-softmmu/all
+<span class="c1"># your qemu executable is now in qemu/x86_64-softmmu/qemu-system-x86_64</span>
+</code></pre></div>
+
+<p>The files/functions I ended up patching were:</p>
+<ul>
+<li><strong>target/i386/excp_helper.c</strong>: At a triple fault check_exception(),
+    raise_exception_err_ra() or its variants will be called.
+    An attempt at adding backtrace's failed, so I ended up looking up the exception
+    numbers in <code>target/i386/cpu.h</code> (search for <code>#define EXCP??_*</code>) and the grepping
+    the qemu codebase for calls to the function in excp_helper.c with the right
+    exception #define as argument.
+    During setting up paging, logging handle_mmu_fault() was really useful
+    to see how the CPU performed the page walk. Adding a condition statement
+    like <code>if (env-&gt;regs[R_R15] == 0xdeadbeef)</code> and loading R15 with 0xdeadbeef on kernel start
+    helps to reduce noise. handle_mmu_fault() is called on every table fill,
+    an error only occurs when it executes a <code>goto fault</code>.</li>
+<li><strong>target/i386/seg_helper.cs</strong>: this is where most exceptions originate from.
+    Just adding a simple printf() with the current <code>__LINE__</code> and <code>__FUNCTION__</code>
+    before every call to a raise_exception_err_ra() functions helps enormously.</li>
+<li><strong>target/i386/misc_helper.c</strong>: I wanted to be sure that I wrote the right values
+    to model specific registers and added logging to helper_wrmsr().
+    Later, I also added a new fake MSR such that the wrmsr instruction could be used to
+    print integer values from the kernel (
+    <code>if ((uint32_t)env-&gt;regs[R_ECX] == 0xdeadbeef) { printf("RDI=%ld(%lx) RSI=%ld(%lx) RDX=%ld(%lx)\n", ...</code>).</li>
+<li><strong>cpu.h</strong>: when issueing a <code>sysret</code> to go to userspace, 
+    the inlined function cpu_x86_load_seg_cache() gets called from helper_sysret() in <code>seg_helper.c</code>,
+    which changes the cpu privilege level.
+    Here you can log the new CPL, or just check <code>env-&gt;hflags &amp; HF_CPL_MASK</code> afterwards
+    (that function gets called <em>a lot</em>, and its defined in a header so you have to recompile
+    quite some files).</li>
+</ul>
+<h1>The Memory Map and Page Allocator</h1>
+<p>Taking control of the machine in a correct way, by getting a memory map and
+calling <code>EFI_BOOT_SERVICES.ExitBootServices()</code> was actually the last thing implemented.
+Technically, it should happen before everything else, so I decided to write this down first.
+The reason we need a memory map is that we need a very minimal page allocator to set up paging to go to userspace.
+And for a page allocator, we need to know where the free memory is at.</p>
+<p>The quick 'n easy way is to load the UEFI shell (press escape in the OVMF waiting screen),
+type <code>memmap -b</code> and look for the largest
+free blob of available memory. For me, that was 0x1300000. Now, your page allocator
+can just use that address, and bump it by a single page on each page allocation:</p>
+<div class="highlight"><pre><span></span><code><span class="kt">uint64_t</span><span class="w"> </span><span class="n">next_alloc_page</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x1300000</span><span class="p">;</span>
+<span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nf">alloc_page</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">next_alloc_page</span><span class="p">;</span>
+<span class="w">    </span><span class="n">next_alloc_page</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">4096</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">page</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Of course, that's not portable at all, and the correct way is to
+read the UEFI memory map. If you just want to move on fast,
+skip the next part. Reference the <a href="https://uefi.org/specifications">UEFI Spec</a>
+<em>Memory Allocation Services</em> for details and <a href="https://www.rodsbooks.com/efi-programming/efi_services.html">this</a> for why
+uefi_call_wrapper() is needed (it is to fix calling conventions).
+By calling <code>BS-&gt;GetMemoryMap()</code>, we ask the uefi firmware
+to fill a buffer with <code>struct uefi_mmap</code> entries, where each entry
+describes a memory region. As this struct might change between
+versions, it contains a <code>desc_size</code> field with the struct size,
+so our code will still work when a new field is added.
+Note that the buffer size is in bytes, not the amount of memory map entries you want.</p>
+<div class="highlight"><pre><span></span><code><span class="cp">#define UEFI_MMAP_SIZE 0x4000</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">uefi_mmap</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">nbytes</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">buffer</span><span class="p">[</span><span class="n">UEFI_MMAP_SIZE</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">mapkey</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">desc_size</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">desc_version</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">uefi_mmap</span><span class="p">;</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">setup_uefi</span><span class="p">(</span><span class="n">EFI_HANDLE</span><span class="w"> </span><span class="n">ImageHandle</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* call GetMemoryMap(size, buffer, mapkey, desc_size, desc_version) */</span>
+<span class="w">    </span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">nbytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UEFI_MMAP_SIZE</span><span class="p">;</span>
+<span class="w">    </span><span class="n">uefi_call_wrapper</span><span class="p">(</span><span class="n">BS</span><span class="o">-&gt;</span><span class="n">GetMemoryMap</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">            </span><span class="o">&amp;</span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">nbytes</span><span class="p">,</span>
+<span class="w">            </span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">buffer</span><span class="p">,</span>
+<span class="w">            </span><span class="o">&amp;</span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">mapkey</span><span class="p">,</span>
+<span class="w">            </span><span class="o">&amp;</span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">desc_size</span><span class="p">,</span>
+<span class="w">            </span><span class="o">&amp;</span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">desc_version</span><span class="p">);</span>
+<span class="w">    </span><span class="cm">/* find largest continuous chunk of EfiConventionalMemory */</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">best_alloc_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">best_number_of_pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">nbytes</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">desc_size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">EFI_MEMORY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">desc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">EFI_MEMORY_DESCRIPTOR</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">desc</span><span class="o">-&gt;</span><span class="n">Type</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">EfiConventionalMemory</span><span class="p">)</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">desc</span><span class="o">-&gt;</span><span class="n">NumberOfPages</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">best_number_of_pages</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">best_number_of_pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">desc</span><span class="o">-&gt;</span><span class="n">NumberOfPages</span><span class="p">;</span>
+<span class="w">            </span><span class="n">best_alloc_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">desc</span><span class="o">-&gt;</span><span class="n">PhysicalStart</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">next_alloc_page</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">best_alloc_start</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* call ExitBootServices(ImageHandle, mapkey) */</span>
+<span class="w">    </span><span class="n">uefi_call_wrapper</span><span class="p">(</span><span class="n">BS</span><span class="o">-&gt;</span><span class="n">ExitBootServices</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ImageHandle</span><span class="p">,</span>
+<span class="w">            </span><span class="n">uefi_mmap</span><span class="p">.</span><span class="n">mapkey</span><span class="p">);</span>
+<span class="w">    </span><span class="cm">/* we are in control of the memory map now :) */</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is still far from a perfect page allocator,
+as it is impossible to free pages and doesn't make use of
+other available memory regions.
+However, it works more than good enough to identity map all 128MB
+of default qemu memory in 4kb pages (66 pages) :).
+Maybe just preallocating a few pages in <code>.data</code>
+would have been easier..</p>
+<h1>Clearing Interrupts</h1>
+<p>Interrupts handling is not needed to go to userspace, so just disable interrupts.</p>
+<div class="highlight"><pre><span></span><code><span class="k">asm</span><span class="p">(</span><span class="s">&quot;cli&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+<h1>Setting up the GDT and TSS</h1>
+<p>Contrary to going to userspace, there are somehow tons of tutorials on how to load a GDT
+or what it is, so I won't go in too much details.
+In short, every GDT (global descriptor table) entry (descriptor) defines a <code>segment</code>,
+which was used before paging to implement memory protection.
+Each segment has attributes like its start (base), length (limit) and various bitflag settings.
+In 64-bit, all segments overlap and span the entire address space so we can ignore the limit and base attributes.
+The main focus lies on the GDT type flags, which define whether it is a code or data segment and set the privilege level.
+By loading the segment registers with indices into the GDT, the cpu switches to the corresponding
+privilege level.
+Code segments go in the code segment register <code>CS</code>, and data segments go into the data segment registers
+(<code>DS</code>, <code>ES</code>, <code>FS</code>, <code>GS</code>, <code>SS</code>).
+It's a bit more complicated than it should be, but thats the way it works.</p>
+<p>Then, there is also the Task State Segment (TSS).
+It holds information on where execution should continue after an interrupt.
+We're not handling those¸ but we're forced to have a segment descriptor telling where our TSS is in the GDT.</p>
+<p>For <code>syscall</code>/<code>sysret</code>, we need a 64 bit GDT with data and code segments for both kernel and userspace.
+While UEFI leaves us with a functional GDT, we technically don't know what it looks like so we need to define our own
+one.</p>
+<p>This is what I ended up with:</p>
+<div class="highlight"><pre><span></span><code><span class="cp">#pragma pack (1)</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">limit15_0</span><span class="p">;</span><span class="w">            </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">base15_0</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">uint8_t</span><span class="w">  </span><span class="n">base23_16</span><span class="p">;</span><span class="w">            </span><span class="kt">uint8_t</span><span class="w">  </span><span class="n">type</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">uint8_t</span><span class="w">  </span><span class="n">limit19_16_and_flags</span><span class="p">;</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w">  </span><span class="n">base31_24</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">tss</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">reserved0</span><span class="p">;</span><span class="w"> </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">rsp0</span><span class="p">;</span><span class="w">      </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">rsp1</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">rsp2</span><span class="p">;</span><span class="w">      </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">reserved1</span><span class="p">;</span><span class="w"> </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">ist1</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">ist2</span><span class="p">;</span><span class="w">      </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">ist3</span><span class="p">;</span><span class="w">      </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">ist4</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">ist5</span><span class="p">;</span><span class="w">      </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">ist6</span><span class="p">;</span><span class="w">      </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">ist7</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">reserved2</span><span class="p">;</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">reserved3</span><span class="p">;</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">iopb_offset</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">tss</span><span class="p">;</span>
+
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">aligned</span><span class="p">(</span><span class="mi">4096</span><span class="p">)))</span>
+<span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">null</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">kernel_code</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">kernel_data</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">null2</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">user_data</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">user_code</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">ovmf_data</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">ovmf_code</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">tss_low</span><span class="p">;</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">gdt_entry</span><span class="w"> </span><span class="n">tss_high</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">gdt_table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x00 null  */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x9a</span><span class="p">,</span><span class="w"> </span><span class="mh">0xa0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x08 kernel code (kernel base selector) */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x92</span><span class="p">,</span><span class="w"> </span><span class="mh">0xa0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x10 kernel data */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x18 null (user base selector) */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x92</span><span class="p">,</span><span class="w"> </span><span class="mh">0xa0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x20 user data */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x9a</span><span class="p">,</span><span class="w"> </span><span class="mh">0xa0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x28 user code */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x92</span><span class="p">,</span><span class="w"> </span><span class="mh">0xa0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x30 ovmf data */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x9a</span><span class="p">,</span><span class="w"> </span><span class="mh">0xa0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x38 ovmf code */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x89</span><span class="p">,</span><span class="w"> </span><span class="mh">0xa0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x40 tss low */</span>
+<span class="w">    </span><span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w">  </span><span class="cm">/* 0x48 tss high */</span>
+<span class="p">};</span>
+
+<span class="cp">#pragma pack ()</span>
+</code></pre></div>
+
+<p>Nothing special.
+Our user base selector will be 0x18, the value we'll load into the STAR MSR high bits.
+On <code>sysret</code>, <code>CS</code> will be set to 0x18+16=0x28 and <code>SS</code> to 0x18+8=0x20.
+That are the correct segment indices we set up for user code and user data.</p>
+<p>Note how there are two descriptors for the TSS. This is needed to store
+a full 64 bit pointer to the TSS base (the higher half goes in the second TSS descriptor's limit).
+Not that we need that because qemu has only 128Mb memory by default,
+but otherwise qemu will give you an exception.</p>
+<p>There are two segments for the OVMF firmware.
+Calling into the UEFI Console Services results in an exception, but I found that adding segments
+at the offsets 0x30 (data) and 0x38 (code) makes it possible to call them again.
+After that your cpu state is most likely broken beyond repair, but it is sometimes useful to see
+wheter a certain piece of code gets executed. You shouldn't make too much use of it probably.</p>
+<p>Next, we need to put the TSS address into the GDT as its impossible to let the linker figure that out.
+We are then ready to load the GDT using the <code>lgdt</code> instruction and set up the segment registers
+with our newly defined segments.
+The most important change here from most 'load the GDT and jump to long mode' tutorial code, is
+that I replaced the <code>far jump</code> with a <code>lretq</code>.
+While you should use a far jump to load a 64 bit GDT in protected (32 bit) mode, this instruction
+is not supported in 64 bit mode itself (?!) and you have to resort to something like <code>lretq</code>.
+See section <em>7.2.3 TSS Descriptor in 64-bit mode</em> of the *Intel 64 and IA-32 Architectures Software Developer's Manuel
+for a more detailed explanation of the TSS entry layout.</p>
+<div class="highlight"><pre><span></span><code><span class="cp">#pragma pack (1)</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">table_ptr</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">limit</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">base</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cp">#pragma pack ()</span>
+
+<span class="k">extern</span><span class="w"> </span><span class="cm">/* defined in assembly */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">load_gdt</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">table_ptr</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">gdt_ptr</span><span class="p">);</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nf">memzero</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">((</span><span class="kt">uint8_t</span><span class="o">*</span><span class="p">)</span><span class="n">s</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">setup_gdt</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">memzero</span><span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">tss</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">tss</span><span class="p">));</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">tss_base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="kt">uint64_t</span><span class="p">)</span><span class="o">&amp;</span><span class="n">tss</span><span class="p">);</span>
+<span class="w">    </span><span class="n">gdt_table</span><span class="p">.</span><span class="n">tss_low</span><span class="p">.</span><span class="n">base15_0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tss_base</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xffff</span><span class="p">;</span>
+<span class="w">    </span><span class="n">gdt_table</span><span class="p">.</span><span class="n">tss_low</span><span class="p">.</span><span class="n">base23_16</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">tss_base</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">16</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xff</span><span class="p">;</span>
+<span class="w">    </span><span class="n">gdt_table</span><span class="p">.</span><span class="n">tss_low</span><span class="p">.</span><span class="n">base31_24</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">tss_base</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">24</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xff</span><span class="p">;</span>
+<span class="w">    </span><span class="n">gdt_table</span><span class="p">.</span><span class="n">tss_low</span><span class="p">.</span><span class="n">limit15_0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">tss</span><span class="p">);</span>
+<span class="w">    </span><span class="n">gdt_table</span><span class="p">.</span><span class="n">tss_high</span><span class="p">.</span><span class="n">limit15_0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">tss_base</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">32</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xffff</span><span class="p">;</span>
+<span class="w">    </span><span class="n">gdt_table</span><span class="p">.</span><span class="n">tss_high</span><span class="p">.</span><span class="n">base15_0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">tss_base</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">48</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0xffff</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">table_ptr</span><span class="w"> </span><span class="n">gdt_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">gdt_table</span><span class="p">)</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">UINT64</span><span class="p">)</span><span class="o">&amp;</span><span class="n">gdt_table</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">load_gdt</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gdt_ptr</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The actual GDT loading assembly code:</p>
+<div class="highlight"><pre><span></span><code><span class="p">.</span><span class="k">global</span><span class="w"> </span><span class="n">load_gdt</span>
+<span class="nl">load_gdt</span><span class="p">:</span>
+<span class="w">    </span><span class="n">lgdt</span><span class="w"> </span><span class="o">[</span><span class="n">rdi</span><span class="o">]</span><span class="w">      </span><span class="p">;</span><span class="w"> </span><span class="k">load</span><span class="w"> </span><span class="n">GDT</span><span class="p">,</span><span class="w"> </span><span class="n">rdi</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="n">st</span><span class="w"> </span><span class="n">argument</span><span class="p">)</span><span class="w"> </span><span class="k">contains</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">gdt_ptr</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">ax</span><span class="p">,</span><span class="w"> </span><span class="mh">0x40</span><span class="w">    </span><span class="p">;</span><span class="w"> </span><span class="n">TSS</span><span class="w"> </span><span class="n">segment</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mh">0x40</span>
+<span class="w">    </span><span class="n">ltr</span><span class="w"> </span><span class="n">ax</span><span class="w">          </span><span class="p">;</span><span class="w"> </span><span class="k">load</span><span class="w"> </span><span class="n">TSS</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">ax</span><span class="p">,</span><span class="w"> </span><span class="mh">0x10</span><span class="w">    </span><span class="p">;</span><span class="w"> </span><span class="n">kernel</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">segment</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mh">0x10</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">ds</span><span class="p">,</span><span class="w"> </span><span class="n">ax</span><span class="w">      </span><span class="p">;</span><span class="w"> </span><span class="k">load</span><span class="w"> </span><span class="n">kernel</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">segment</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">segment</span><span class="w"> </span><span class="n">registers</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">es</span><span class="p">,</span><span class="w"> </span><span class="n">ax</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">fs</span><span class="p">,</span><span class="w"> </span><span class="n">ax</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">gs</span><span class="p">,</span><span class="w"> </span><span class="n">ax</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">ss</span><span class="p">,</span><span class="w"> </span><span class="n">ax</span>
+<span class="w">    </span><span class="n">popq</span><span class="w"> </span><span class="n">rdi</span><span class="w">        </span><span class="p">;</span><span class="w"> </span><span class="n">pop</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">address</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">rax</span><span class="p">,</span><span class="w"> </span><span class="mh">0x08</span><span class="w">   </span><span class="p">;</span><span class="w"> </span><span class="n">kernel</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="n">segment</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mh">0x08</span>
+<span class="w">    </span><span class="n">pushq</span><span class="w"> </span><span class="n">rax</span><span class="w">       </span><span class="p">;</span><span class="w"> </span><span class="n">push</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">kernel</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="n">segment</span>
+<span class="w">    </span><span class="n">pushq</span><span class="w"> </span><span class="n">rdi</span><span class="w">       </span><span class="p">;</span><span class="w"> </span><span class="n">push</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="n">again</span>
+<span class="w">    </span><span class="n">lretq</span><span class="w">           </span><span class="p">;</span><span class="w"> </span><span class="n">do</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">far</span><span class="w"> </span><span class="k">return</span><span class="p">,</span><span class="w"> </span><span class="ow">like</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">but</span>
+<span class="w">                    </span><span class="p">;</span><span class="w"> </span><span class="n">pop</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">extra</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">stack</span>
+<span class="w">                    </span><span class="p">;</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="k">load</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">into</span><span class="w"> </span><span class="n">CS</span>
+</code></pre></div>
+
+<p>That should get you a nice and functioning GDT.</p>
+<h1>Setting up Paging</h1>
+<p>Paging is mandatory in x86_64.
+All regular memory accesses go through the MMU,
+which translates the <em>virtual address</em>
+into a <em>physical address</em>.
+At the same time, access control is applied like readable/writable, user accessible etc..
+In this way, the kernel can hide its own and other processes
+memory contents from the current executing process, or enable sharing of a piece of memory
+between processes.
+All memory locations seen in userspace are actually virtual addresses.</p>
+<p>This translation is defined in a hierachy of mapping tables.
+In 64 bit mode (IA-32E paging), there a 4 levels of mapping tables:
+Page map level 4 (PML4), page directory pointer table (PDPT),
+page directory (PD) and the page table (PT).
+Each mapping table spans 1 page (4096 bytes) in size and contains 512 8-byte entries.
+There is only one PML4, which refers to up to 512 PDPTs. These in turn point to
+up to $$2^{18}$$ page directories, which point to up to $$2^{27}$$ page tables.
+Page tables entries contain the the physical addresses of the page they
+refer to, so in total the PML4 spans
+a maximum of $$4096\cdot2^{4\cdot9}=2^{48} \mathrm{bytes} = 265\mathrm{TiB}$$.</p>
+<p>When the MMU needs to translate a virtual address, a page walk is performed.</p>
+<ul>
+<li>Control register CR3 is read to obtain the physical address of the PML4.</li>
+<li>Number the bits of the virtual address from 63 (high) to 0 (low).</li>
+<li>Bits 47-39 are used as an index into the 512 PML4 entries, to select the PDPT</li>
+<li>Bits 38-30 index into the PDPT, to give a page directory</li>
+<li>Bits 29-20 index into the page directory, to give a page table</li>
+<li>Bits 20-12 index into the page table, which contains the physical address of the page</li>
+<li>Bits 0-11 then contain the offset into that page.</li>
+</ul>
+<p>If the virtual address has already been translated in the recent past,
+it will be cached in the Translation Lookaside Buffer (TLB) such that the time expensive page walk can be skipped.
+Care should be taken that when the page table changes, the right (or just all) pages are invalidated in the TLB.
+The architecture provides neat ways to do that, like process-context identifiers (PCIDs), but we can ignore those for now.</p>
+<p>There is already a nice paging setup when the kernel main function is called,
+otherwise we couldn't be in 64 bit mode.
+However it doesn't allow for userspace (CPL=3) read/write/code execution in the
+memory where our kernel is loaded.
+So we have to take control of the paging system, and the easiest way is to build our own.
+We'll just identity map (meaning virtual addresses map to identical physical addresses)
+the whole 128MB address space and allow userspace read/write/code execution.</p>
+<p>Section <em>4.5 IA-32E Paging</em> of the <em>Intel 64 and IA-32 Architectures Software Developer's Manuel
+Volume 3A: System Programming Guide, Part 1</em>
+contains the complete description of how paging works in 64 bit mode.
+Its a good idea in general to give that a good read when developing a kernel.</p>
+<p>A mapping table contains 512 8 byte entries and PML4 is the topmost mapping table:</p>
+<div class="highlight"><pre><span></span><code><span class="cp">#pragma pack(1)</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">entries</span><span class="p">[</span><span class="mi">512</span><span class="p">];</span>
+<span class="p">};</span>
+
+<span class="cp">#pragma pack()</span>
+
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">aligned</span><span class="p">(</span><span class="mi">4096</span><span class="p">)))</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="w"> </span><span class="n">pml4</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Next we load the PML4 such that it identity maps the entire address space.
+Each entry in a mapping table contains a page aligned address (to either
+another mapping table or a physical page). Since these addresses must
+be page aligned, and there is a architectural maximum limit of 52 bits physical addresses,
+there is room for bit flags in the entries.
+The important flags for us are Present, Readable/Writable and User/Supervisor.
+They must all be set to allow for user executable pages.</p>
+<p>The next piece of code performs an identity map for one page.
+It might look a bit involved due to the 4-level repetition.
+Remember that we start with a completely empty PML4.
+The code in essence performs a page walk, and every time an empty entry is
+found it allocates space for a new mapping table and updates that entry.</p>
+<div class="highlight"><pre><span></span><code><span class="cm">/* bitflags */</span>
+<span class="cp">#define PAGE_BIT_P_PRESENT (1&lt;&lt;0)</span>
+<span class="cp">#define PAGE_BIT_RW_WRITABLE (1&lt;&lt;1)</span>
+<span class="cp">#define PAGE_BIT_US_USER (1&lt;&lt;2)</span>
+<span class="cp">#define PAGE_XD_NX (1&lt;&lt;63)</span>
+
+<span class="cm">/* bit mask for page aligned 52-bit address */</span>
+<span class="cp">#define PAGE_ADDR_MASK 0x000ffffffffff000</span>
+
+<span class="cm">/* these get updated when a page is accessed/written to */</span>
+<span class="cp">#define PAGE_BIT_A_ACCESSED (1&lt;&lt;5)</span>
+<span class="cp">#define PAGE_BIT_D_DIRTY (1&lt;&lt;6)</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">identity_map_4kb</span><span class="p">(</span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">logical</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* flags: page is present, user readable and writable */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PAGE_BIT_P_PRESENT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PAGE_BIT_RW_WRITABLE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PAGE_BIT_US_USER</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* extract mapping table indices from virtual address */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">pml4_idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">logical</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">39</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x1ff</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">pdp_idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">logical</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">30</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x1ff</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">pd_idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">logical</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">21</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x1ff</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">pt_idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">logical</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">12</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x1ff</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">p_idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">logical</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x7ff</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* did we define a PDPT for this PML4 index? */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">pml4</span><span class="p">.</span><span class="n">entries</span><span class="p">[</span><span class="n">pml4_idx</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_BIT_P_PRESENT</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* no, so lets allocate a new page for the PDPT */</span>
+<span class="w">        </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">pdpt_alloc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">alloc_page</span><span class="p">();</span>
+<span class="w">        </span><span class="cm">/* zero it - this makes the PDPT an empty table with no PDTs present */</span>
+<span class="w">        </span><span class="n">memzero</span><span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">pdpt_alloc</span><span class="p">,</span><span class="w"> </span><span class="mi">4096</span><span class="p">);</span>
+<span class="w">        </span><span class="cm">/* now update the PML4 so it contains the new PDPT */</span>
+<span class="w">        </span><span class="n">pml4</span><span class="p">.</span><span class="n">entries</span><span class="p">[</span><span class="n">pml4_idx</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">pdpt_alloc</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_ADDR_MASK</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<span class="w">        </span><span class="cm">/* and make sure we can also access from our kernel</span>
+<span class="cm">         * a bit redundant since we map the entire address space,</span>
+<span class="cm">         * but needed when you map a smaller section */</span>
+<span class="w">        </span><span class="n">identity_map_4kb</span><span class="p">(</span><span class="n">pdpt_alloc</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* get the PDPT given by the PML4 index */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pdpt</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="o">*</span><span class="p">)(</span><span class="n">pml4</span><span class="p">.</span><span class="n">entries</span><span class="p">[</span><span class="n">pml4_idx</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_ADDR_MASK</span><span class="p">);</span>
+<span class="w">    </span><span class="cm">/* and repeat the same process for the PDPT */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">pdpt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pdp_idx</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_BIT_P_PRESENT</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">pdt_alloc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">alloc_page</span><span class="p">();</span>
+<span class="w">        </span><span class="n">memzero</span><span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">pdt_alloc</span><span class="p">,</span><span class="w"> </span><span class="mi">4096</span><span class="p">);</span>
+<span class="w">        </span><span class="n">pdpt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pdp_idx</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">pdt_alloc</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_ADDR_MASK</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<span class="w">        </span><span class="n">identity_map_4kb</span><span class="p">(</span><span class="n">pdt_alloc</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* repeat the same process for the PDT */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pdt</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="o">*</span><span class="p">)(</span><span class="n">pdpt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pdp_idx</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_ADDR_MASK</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">pdt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pd_idx</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_BIT_P_PRESENT</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">pt_alloc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">alloc_page</span><span class="p">();</span>
+<span class="w">        </span><span class="n">memzero</span><span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">pt_alloc</span><span class="p">,</span><span class="w"> </span><span class="mi">4096</span><span class="p">);</span>
+<span class="w">        </span><span class="n">pdt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pd_idx</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">pt_alloc</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_ADDR_MASK</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<span class="w">        </span><span class="n">identity_map_4kb</span><span class="p">(</span><span class="n">pt_alloc</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* get the target PT */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pt</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="o">*</span><span class="p">)(</span><span class="n">pdt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pd_idx</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_ADDR_MASK</span><span class="p">);</span>
+<span class="w">    </span><span class="cm">/* and update it such that it identity maps the given page */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">pt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pt_idx</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_BIT_P_PRESENT</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pt</span><span class="o">-&gt;</span><span class="n">entries</span><span class="p">[</span><span class="n">pt_idx</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">logical</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PAGE_ADDR_MASK</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now we just need to call this function a few times
+and update the CR3 register with our PML4 address:
+A cleaner way would be to do this based on the UEFI memory map.</p>
+<div class="highlight"><pre><span></span><code><span class="k">extern</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">load_pml4</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">mapping_table</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pml4</span><span class="p">);</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">setup_paging</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">memzero</span><span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">pml4</span><span class="p">,</span><span class="w"> </span><span class="mi">4096</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">128</span><span class="o">*</span><span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">+=</span><span class="mi">4096</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">identity_map_4kb</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">load_pml4</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pml4</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="o">.</span><span class="n">global</span><span class="w"> </span><span class="n">load_pml4</span>
+<span class="n">load_pml4</span><span class="p">:</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">rax</span><span class="p">,</span><span class="w"> </span><span class="mh">0x000ffffffffff000</span>
+<span class="w">    </span><span class="ow">and</span><span class="w"> </span><span class="n">rdi</span><span class="p">,</span><span class="w"> </span><span class="n">rax</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">cr3</span><span class="p">,</span><span class="w"> </span><span class="n">rdi</span>
+<span class="w">    </span><span class="n">ret</span>
+</code></pre></div>
+
+<p>Nearly there! Now we just need update some model specific registers to execute a <code>sysret</code>.</p>
+<h1>Enabling System Call Extensions and STAR</h1>
+<p>There are two things that need to happen before we can use <code>sysret</code>.
+First, we need to enable the System Call Extensions (SCE).
+Else, when we execute <code>sysret</code> we get an undefined opcode exception.
+Next, we need to tell the cpu that executing <code>sysret</code> should... get us to
+userspace by specifying which segment is the user base segment.</p>
+<p>This happens via two model specific registers (MSRs), EFER and STAR, both introduced
+by AMD. While they are technically model specific, they are now part of the architecture.
+Reading and writing MSRs happens via loading their assigned address in RCX
+and executing <code>rsmsr</code> or <code>wrmsr</code>. The contents are written to or loaded from <code>EDX:EAX</code>.
+Pretty straighforward:</p>
+<div class="highlight"><pre><span></span><code><span class="n">enable_sce</span><span class="p">:</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">rcx</span><span class="p">,</span><span class="w"> </span><span class="mh">0xc0000080</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">EFER</span><span class="w"> </span><span class="n">MSR</span>
+<span class="w">    </span><span class="n">rdmsr</span><span class="w">               </span><span class="p">;</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="n">EFER</span>
+<span class="w">    </span><span class="ow">or</span><span class="w"> </span><span class="n">eax</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="w">           </span><span class="p">;</span><span class="w"> </span><span class="n">enable</span><span class="w"> </span><span class="n">SCE</span><span class="w"> </span><span class="n">bit</span>
+<span class="w">    </span><span class="n">wrmsr</span><span class="w">               </span><span class="p">;</span><span class="w"> </span><span class="n">write</span><span class="w"> </span><span class="n">back</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">EFER</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">rcx</span><span class="p">,</span><span class="w"> </span><span class="mh">0xc0000081</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">STAR</span><span class="w"> </span><span class="n">MSR</span>
+<span class="w">    </span><span class="n">rdmsr</span><span class="w">               </span><span class="p">;</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="n">STAR</span>
+<span class="w">    </span><span class="n">mov</span><span class="w"> </span><span class="n">edx</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00180008</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="nb">load</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="n">GDT</span><span class="w"> </span><span class="n">segment</span><span class="w"> </span><span class="n">bases</span><span class="w"> </span><span class="mh">0x0</span><span class="w"> </span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="mh">0x18</span><span class="w"> </span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="w">    </span><span class="n">wrmsr</span><span class="w">               </span><span class="p">;</span><span class="w"> </span><span class="n">write</span><span class="w"> </span><span class="n">back</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">STAR</span>
+<span class="w">    </span><span class="n">ret</span><span class="w">                 </span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">back</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">C</span>
+</code></pre></div>
+
+<h1>To (User)Space!</h1>
+<p>The final step! Or hopefully the beginning of a whole new kernel!</p>
+<p>Lets start by defining a userspace entry point and some room for the stack:</p>
+<div class="highlight"><pre><span></span><code><span class="kt">uint64_t</span><span class="w"> </span><span class="n">user_stack</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">user_function</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="p">(;;);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And a function that sets up the right registers and performs a <code>sysret</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="na">.global</span><span class="w"> </span><span class="no">to_userspace</span>
+<span class="nl">to_userspace:</span>
+<span class="w">    </span><span class="nf">mov</span><span class="w"> </span><span class="no">rcx</span><span class="p">,</span><span class="w"> </span><span class="no">rdi</span><span class="w">        </span><span class="c1">; first argument, new instruction pointer</span>
+<span class="w">    </span><span class="nf">mov</span><span class="w"> </span><span class="no">rsp</span><span class="p">,</span><span class="w"> </span><span class="no">rsi</span><span class="w">        </span><span class="c1">; second argument, new stack pointer</span>
+<span class="w">    </span><span class="nf">mov</span><span class="w"> </span><span class="no">r11</span><span class="p">,</span><span class="w"> </span><span class="mi">0x0202</span><span class="w">     </span><span class="c1">; eflags</span>
+<span class="w">    </span><span class="nf">sysretq</span><span class="c1">;            ; to space!</span>
+</code></pre></div>
+
+<p>Then call it. Remember that the stack grows down.</p>
+<div class="highlight"><pre><span></span><code><span class="n">to_userspace</span><span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">user_function</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">user_stack</span><span class="p">[</span><span class="mi">1023</span><span class="p">]);</span>
+</code></pre></div>
+
+<p>Congratulations! If everything went well, you
+should now be in privilege level 3.
+Try executing a privileged instruction, like <code>wrmsr</code>
+and a protection fault should happen.</p>
+<h1>Next steps..</h1>
+<p>Thats up to you.
+Adding support for <code>syscall</code> shouldn't be too hard now
+(GDT and STAR are already in the right configuration,
+you need to load the kernel entry point in the LSTAR MSR).
+Then add a struct task to your kernel and try to get
+cooperative multiprocessing working.
+Or first take a look at getting graphics working
+by getting to a known VGA mode via the UEFI graphics protocol.
+Having a working IDT is also a good idea.</p>
+<p>Good luck!</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://github.com/llandsmeer">Github</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

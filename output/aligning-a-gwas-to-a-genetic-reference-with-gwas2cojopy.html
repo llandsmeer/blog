@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Aligning a GWAS to a genetic reference with gwas2cojo.py"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <meta name="description" content="Dealing with a gazillion different undocumented notations and conventions for writing down variant information is a common problem in..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://blog.llandsmeer.com/category/misc.html">misc</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/aligning-a-gwas-to-a-genetic-reference-with-gwas2cojopy.html" rel="bookmark"
+           title="Permalink to "Aligning a GWAS to a genetic reference with gwas2cojo.py"">"Aligning a GWAS to a genetic reference with gwas2cojo.py"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2019-12-28T21:07:00+01:00">
+                Published: za 28 december 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart-landsmeer.html">Lennart Landsmeer</a>
+        </address>
+<p>In <a href="https://blog.llandsmeer.com/category/misc.html">misc</a>.</p>
+
+</footer><!-- /.post-info -->      <p>Dealing with a gazillion different undocumented notations and conventions
+for writing down variant information is a
+common problem in bioinformatics.
+Different effect/other alleles, variant names, reference genome build,
+chromosome name conventions or just different column names all prevent easy comparison between
+genetic variants.
+<code>gwas2cojo.py</code> is there to automatically convert a GWAS to a certain
+genetic reference.</p>
+<p>For example,
+in my bachelor end project I had to
+convert the UKBioBank CAD GWAS dataset to a format
+readable by SMR.
+Our genetic dataset and UKBioBank had different ideas 
+about the allele notation for a given variant.
+The effect allele and other allele were be swapped, or
+the variant might be recorded as lying on the other strand (translated).
+Together with frequency information, this is mostly reversible.
+However, in the case of ambiguous ambivalent alleles (A/T or G/C variant
+with frequencies close to 50%), this is impossible (there is just not enough information)
+and the variant needs to be discarded.
+Dealing with this for multiple versions of
+the GWAS, and different other similar problems led me to write a tool to
+automate all of this.</p>
+<h1>gwas2cojo.py</h1>
+<p>Thus <code>gwas2cojo.py</code> was born, which takes as input a GWAS and genetic reference
+and outputs the GWAS in the notation of the genetic reference in the COJO format.
+After testing against other GWAS datasets online,
+it ended up being quite long (700 lines including CLI help and comments).
+<code>gwas2cojo.py</code> is included by default in the SCRIPTS directory of
+<a href="https://github.com/swvanderlaan/QTLToolKit">QTLToolkit</a>/<a href="https://github.com/llandsmeer/QTLToolKit2">QTLToolkit2</a>
+or available <a href="https://github.com/llandsmeer/QTLToolKit2/blob/master/SCRIPTS/gwas2cojo.py">here</a>.</p>
+<p>The COJO format is the most simple format possible
+that contains all information in a GWAS.
+The format is easily moldable with standard *nix tools.
+Here is an example:</p>
+<div class="highlight"><pre><span></span><code>SNP A1 A2 freq b se p n
+rs2073813 A G 0.16054 0.00184 0.01385 0.8945 253503
+rs3131969 G A 0.81933 -0.00361 0.01369 0.792062 251851
+rs3131968 G A 0.8191 -0.00373 0.01369 0.78532 251852
+rs3131967 C T 0.81446 -0.005 0.01384 0.717932 251852
+rs3115858 T A 0.82673 -0.00441 0.01393 0.75168 255643
+rs3131962 G A 0.81798 -0.00162 0.01379 0.906485 252504
+[...]
+</code></pre></div>
+
+<p>The genetic reference is read from a genetic summary statistics
+file as outputed by <a href="https://www.cog-genomics.org/plink/">PLINK</a> or reference GWAS file.
+GWAS and genetic input files are assumed to be text files, with one
+row per line and fields separated by any number of whitespace characters.
+The first line is assumed to be the header.
+This was found to be the case for most GWAS datasets encountered online.</p>
+<p>The feature list ended up a bit long for a small script:</p>
+<ul>
+<li>Autodetection of columns from the first 100 GWAS rows.
+   Nearly every GWAS file found online has different column names.</li>
+<li>Running gwas2cojo.py with insufficient column information will
+   print copy-paste ready command-line arguments to
+   fill in this information.</li>
+<li>Report file generation with an explanation of
+   all failed and discarded variants, and a script in QTLToolkit to
+   verify the report file.</li>
+<li>Dry-run by default.</li>
+<li>Live progress and straight line R^2 statistic of
+ the GWAS vs. genetic effect allele frequency. This should
+   be close to 1 (only shown if <code>numpy</code> is installed).</li>
+<li>Stopping the reading of the GWAS or genetic file halfway with Ctrl-C,
+   without stopping the complete problem so that small test files can be
+   created or statistics for a small sample can be gathered.</li>
+<li>Python version 2 and 3 support</li>
+<li>Support for a single <code>chr_bp</code> column vs. separate <code>chr</code> and <code>bp</code> columns,
+   or a single <code>nsamples</code> vs. separate <code>ncases</code> and <code>ncontrol</code>.</li>
+<li>Autodetection of the most likely genome build from header</li>
+<li>When reference genome build conversion is needed,
+   this is done through <code>pyliftover</code>
+   if installed, or an error message with installation instructions
+   is show if it is not.</li>
+<li>Of courese, allele conversion to genetic reference.
+   When two alleles are swapped, the beta value is negated.
+   When the frequency difference between the genetic reference and
+   GWAS is too large, the variant is discarded.</li>
+<li>Correct handling of the various indel notations.</li>
+<li>Variant equality is done by comparision of chromosome and bp position.
+   Variant name is taken from the genetic reference
+   (GWAS data can often have different variant names).</li>
+<li>Chromosome name comparison is implemented
+   for many different chromosome name conventions, including
+   with or without leading <code>chr</code>, leading zeroes, using numbers
+   for the X, Y and MT chromosomes and different notations for the MT
+   chromosome.</li>
+</ul>
+<p>As I found more and more GWAS files to test the program on, more and more edge-cases
+were solved in gwas2cojo.py. I also did some optimization based on <code>klines/sec</code>.
+The code is not pretty :) However, the verification script that checks whether
+the output is correct is however short and simple, and hasn't found an error until now.</p>
+<p>I hope I can help you prevent you from redoing all this work yourselves,
+as discovering all the differences in notation was a long and painfull project.
+Let me know if you found edge-cases where it dit not work, or if you have other improvements!</p>
+<p><em>Update 2020:</em> as this tool recently gained some interest, I've deciced to upload
+one of the genetics references I'm using in my current research as a starter
+for others (as is, without waranty) <a href="https://blog.llandsmeer.com/1kGp3.ref.1maf.nonbia.sumstats.gz">here</a>. It's a summary statistics of the <a href="https://www.internationalgenome.org/">1000Genomes</a> project
+after filtering on 1% MAF and removing non-bivalent alleles.
+If, for example, you're doing Mendelian Randomization's
+between eQTLs and GWAS's, this wouldn't work and you'd need to use the genetic dataset
+used for the eQTLs as reference (use something like <code>qctool</code> to generate a summary statistics file).</p>
+<p>First ten rows of the genetics reference (needed: chrom/pos/id/ref/alt/frequency):</p>
+<div class="highlight"><pre><span></span><code>CHROM  POS    ID           REF                     ALT  AF         EUR_AF  CHROM:POS:REF:ALT
+1      10177  rs367896724  A                       AC   0.425319   0.4056  1:10177:A:AC
+1      10352  rs555500075  T                       TA   0.4375     0.4264  1:10352:T:TA
+1      10616  rs376342519  CCGCCGTTGCAAAGGCGCGCCG  C    0.993011   0.994   1:10616:CCGCCGTTGCAAAGGCGCGCCG:C
+1      11008  rs575272151  C                       G    0.0880591  0.0885  1:11008:C:G
+1      11012  rs544419019  C                       G    0.0880591  0.0885  1:11012:C:G
+1      13110  rs540538026  G                       A    0.0267572  0.0567  1:13110:G:A
+1      13116  rs62635286   T                       G    0.0970447  0.1869  1:13116:T:G
+1      13118  rs200579949  A                       G    0.0970447  0.1869  1:13118:A:G
+1      13273  rs531730856  G                       C    0.0950479  0.1471  1:13273:G:C
+</code></pre></div>
+
+<p>Here is an example of how I use this to convert ~40 GWASs.
+While column autodetection works for a great deal of GWASs,
+you still need to do manual work in ambiguous cases.</p>
+<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>./QTLToolKit2/SCRIPTS/gwas2cojo.py<span class="w"> </span>\
+<span class="w">        </span>--gen:build<span class="w">     </span>hg19<span class="w"> </span>\
+<span class="w">        </span>--gen<span class="w">           </span>1kGp3.ref.1maf.nonbia.sumstats.gz<span class="w"> </span>\
+<span class="w">        </span>--gwas<span class="w">          </span>&quot;<span class="cp">${</span><span class="n">gwasfilename</span><span class="cp">}</span>&quot;<span class="w"> </span>\
+<span class="w">        </span>--report<span class="w">        </span>&quot;out/<span class="cp">${</span><span class="n">name</span><span class="cp">}</span>.report&quot;<span class="w"> </span>\
+<span class="w">        </span>--gen:ident<span class="w">     </span>ID<span class="w"> </span>\
+<span class="w">        </span>--gen:chr<span class="w">       </span>CHROM<span class="w"> </span>\
+<span class="w">        </span>--gen:other<span class="w">     </span>REF<span class="w"> </span>\
+<span class="w">        </span>--gen:effect<span class="w">    </span>ALT<span class="w"> </span>\
+<span class="w">        </span>--gen:eaf<span class="w">       </span>AF<span class="w"> </span>\
+<span class="w">        </span>--out<span class="w">           </span>&quot;out/<span class="cp">${</span><span class="n">name</span><span class="cp">}</span>.cojo&quot;
+</code></pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://getpelican.com/">Pelican</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

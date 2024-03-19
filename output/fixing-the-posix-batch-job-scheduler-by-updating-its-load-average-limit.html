@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Fixing the posix Batch job scheduler by updating its load average limit"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <meta name="description" content="batch(1) is a little known posix command that supposedly takes a list of jobs/shell scripts and executes them when the load average of the..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://blog.llandsmeer.com/category/misc.html">misc</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/fixing-the-posix-batch-job-scheduler-by-updating-its-load-average-limit.html" rel="bookmark"
+           title="Permalink to "Fixing the posix Batch job scheduler by updating its load average limit"">"Fixing the posix Batch job scheduler by updating its load average limit"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2019-07-19T23:02:00+02:00">
+                Published: vr 19 juli 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart-landsmeer.html">Lennart Landsmeer</a>
+        </address>
+<p>In <a href="https://blog.llandsmeer.com/category/misc.html">misc</a>.</p>
+
+</footer><!-- /.post-info -->      <p><code>batch(1)</code> is a little known posix command that
+supposedly takes a list of jobs/shell scripts and executes them when the load average of the computer drops below a certain level.
+It's far from an ideal scheduler, but it's builtin and does what is should do.
+Problem is, the queued commands actually do not execute sometimes.
+The load average limit is 1.5 by default,
+but I have 6 cores/12 threads, so my load average rises easily above that.</p>
+<p>The <code>atd(8)</code> daemon is responsible for job execution.
+Add <code>-l $(your_load_limit)</code> to the <code>atd</code> invocation in <code>/etc/systemd/system/multi-user.target.wants/atd.service</code>
+(which is a symlink to <code>/lib/systemd/system/atd.service</code> on my system),
+or use the following shell commands to create a copy with the right configuration.</p>
+<div class="highlight"><pre><span></span><code><span class="na">$ sed &#39;/^ExecStart/s/$/ -l &#39;$((`nproc`-1))/ /lib/systemd/system/atd.service | \</span>
+<span class="na">    sudo tee /etc/systemd/system/atd-replace.service</span>
+<span class="na">[Unit]</span>
+<span class="na">Description</span><span class="o">=</span><span class="s">Deferred execution scheduler</span>
+<span class="na">Documentation</span><span class="o">=</span><span class="s">man:atd(8)</span>
+
+<span class="k">[Service]</span>
+<span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/sbin/atd -f -l 11</span>
+<span class="na">IgnoreSIGPIPE</span><span class="o">=</span><span class="s">false</span>
+
+<span class="k">[Install]</span>
+<span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+<span class="err">$ sudo systemctl stop atd.service</span>
+<span class="err">$ sudo systemctl disable atd.service</span>
+<span class="err">$ sudo systemctl enable atd-replace.service</span>
+<span class="err">$ sudo systemctl start atd-replace.service</span>
+</code></pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://getpelican.com/">Pelican</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

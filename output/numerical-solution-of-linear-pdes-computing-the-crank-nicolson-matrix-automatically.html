@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Numerical solution of linear PDEs: Computing the Crank-Nicolson matrix automatically"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <meta name="description" content="The Crank-Nicolson method rewrites a discrete time linear PDE as a matrix multiplication $$\phi_{n+1}=C \phi_n$$. Nonlinear PDE's pose some..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://blog.llandsmeer.com/category/misc.html">misc</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/numerical-solution-of-linear-pdes-computing-the-crank-nicolson-matrix-automatically.html" rel="bookmark"
+           title="Permalink to "Numerical solution of linear PDEs: Computing the Crank-Nicolson matrix automatically"">"Numerical solution of linear PDEs: Computing the Crank-Nicolson matrix automatically"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2019-06-27T01:30:00+01:00">
+                Published: do 27 juni 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart-landsmeer.html">Lennart Landsmeer</a>
+        </address>
+<p>In <a href="https://blog.llandsmeer.com/category/misc.html">misc</a>.</p>
+
+</footer><!-- /.post-info -->      <p>The <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method rewrites a discrete time
+linear PDE as a matrix multiplication $$\phi_{n+1}=C \phi_n$$.
+Nonlinear PDE's pose some additional
+problems, but are solvable as well this way (by linearizing every timestep).
+A major advantage here
+is that going $$k$$ steps into the future is just $$\phi_{n+k}=C^{k}\phi_n$$,
+and calculating a <a href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.matrix_power.html">matrix power</a> is polynomial time.
+The method is in general very stable.</p>
+<p>For an assignment I had to construct the Crank-Nicolson
+matrix for a simple linear 1 dimension PDE, which had to be derived by hand.
+That's a bit labourus, so I made a method to derive it automatically.
+As I came across it while sifting through some older files,
+and could still not find that method elsewhere online,
+I thought I might as well write it up here.</p>
+<h1>Derivation (1D)</h1>
+<p>This is the standard Crank-Nicolson expression for a linear,
+1 dimensional PDE. The time stepping matrix would then
+be $$\mathbf{C}=\mathbf{A}^{-1}\mathbf{B}$$.</p>
+<p>$$
+\begin{align}
+    \phi^{n+1} - \frac{\Delta t}2 f^{n+1} =&amp; \; \phi^n +
+        \frac{\Delta t}2 f^n =\
+    \mathbf{A} \phi^{n+1} =&amp; \; \mathbf{B} \phi^n
+\end{align}
+$$</p>
+<p>Since $$f$$ is linear, we can expand it into the set of its
+impulse responses $$\left{h^k\right}$$. These are the vector outputs $$h^k =
+f\left(\delta^k\right)$$ by applying it to a shifted unit impulse $$\delta^k_i =
+\delta_{ik}$$. We can then rewrite $$f$$ in terms of its impulse responses:</p>
+<p>$$
+\begin{equation}
+    f\left(\phi\right)_i = \sum_k h^k_i \phi_k
+\end{equation}
+$$</p>
+<p>The Crank-Nicolson equation can be rewritten by substituting $$f$$ for
+this definition with the goal of reformulating it as a matrix
+equation.  Focusing on a single element $$\phi^{n+1}_i$$ and moving the
+$$\phi^n$$ terms not resulting from $$f\left(\phi\right)$$ into the sum
+one obtains</p>
+<p>$$
+\begin{equation}
+    \sum_k  \delta_{ik} \phi^{n+1}<em ik>i - \frac{\Delta t}2 h^k_i \phi^{n+1}_k =
+    \sum_k  \delta</em> \phi^n_i + \frac{\Delta t}2 h^k_i \phi^n_k
+\end{equation}
+$$</p>
+<p>Equating this with the definition of the matrix-vector dot product \
+$$(\mathbf{A}\vec x)<em ik>i = \sum_k A</em> x_k$$
+gives the elements of the Crank-Nicolson matrices $$\mathbf{A}$$ and $$\mathbf{B}$$:</p>
+<p>$$
+\begin{align}
+    \mathbf{A}<em ik>{ik} = \delta</em> - \frac{\Delta t}2 h^k_i \
+    \mathbf{B}<em ik>{ik} = \delta</em> + \frac{\Delta t}2 h^k_i
+\end{align}
+$$</p>
+<h1>Implementation</h1>
+<p>Here is a simple diffusion-advection example in Javascript.
+Click to reset and apply new values.</p>
+<div id="cn_draw"></div>
+<p>Advection(1st derivative): <input type="number" value="-50" id="conf_cd1"/><br/>
+Diffusion(2nd derivative): <input type="number" value="0.05" id="conf_cd2"/></p>
+<p>The implementation in Python is a straightforward translation of the
+equations above. Note that <code>int(i == k)</code> is the Kronecker delta
+$$\delta_{ik}$$.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="k">as</span> <span class="nn">LA</span>
+
+<span class="k">def</span> <span class="nf">cn_lin_mat</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>                       <span class="c1"># shifted impulses {delta^k}</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">di</span><span class="p">)</span> <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">d</span><span class="p">]</span>             <span class="c1"># shifted impulse responses {h^k}</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">k</span> <span class="o">%</span> <span class="n">n</span>
+            <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">k</span><span class="p">)</span> <span class="o">-</span> <span class="n">dt</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="n">h</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="n">h</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">Ainv</span> <span class="o">=</span> <span class="n">LA</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">Ainv</span> <span class="o">@</span> <span class="n">B</span>
+    <span class="k">return</span> <span class="n">C</span>
+</code></pre></div>
+
+<h1>Higher Dimensions</h1>
+<p>This generalizes
+trivially to higher dimensions.
+You just have to rewrite f so that it works on 1 dimensional data,
+by reshaping it at appriopiate times.
+So, for a 2d linear PDE over a field with width <code>W</code> and height <code>H</code>
+it would result in the following code. You'd probably want to use
+sparse arrays for $$\mathbf{A}$$ and $$\mathbf{B}$$,
+since they have $$(WH)^2$$ elements, of which most are 0.</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">f1d</span><span class="p">(</span><span class="n">phi</span><span class="p">):</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span>
+    <span class="n">phi_next</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">phi_next</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+<span class="n">C</span> <span class="o">=</span> <span class="n">cn_lin_mat</span><span class="p">(</span><span class="n">f1d</span><span class="p">,</span> <span class="n">W</span><span class="o">*</span><span class="n">H</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+<span class="n">phi1</span> <span class="o">=</span> <span class="p">(</span><span class="n">C</span> <span class="o">@</span> <span class="n">phi0</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span>
+</code></pre></div>
+
+<style>
+    #cn_draw {
+        display: block;
+        height: 200px;
+        width: 100%;
+        background-color: #70c6d8;
+    }
+
+    .cn_bar {
+        display: inline-block;
+        height: 200px;
+        width: 1%;
+    }
+
+    .cn_fill {
+        display: block;
+        width: 100%;
+        background-color: white;
+    }
+
+    #cn_draw::nth-child(2) {
+        background-color: green;
+    }
+</style>
+
+<script src="/js/linalg.min.js"></script>
+
+<script>
+(function () {
+    const DX = 0.01
+    const DT = DX * DX
+    const N = 100
+    let conf_cd1 = 0.1
+    let conf_cd2 = 0.1
+
+    let elem_cd1 = document.getElementById('conf_cd1')
+    let elem_cd2 = document.getElementById('conf_cd2')
+
+    function shifted_impulse(n, i) {
+        let z = new Array(n).fill(0)
+        z[i] = 1
+        return Matrix(z)
+    }
+
+    function roll(x, n) {
+        let sz = x.rows
+        let y = new Array(sz).fill(0)
+        for (let i = 0; i < sz; i++) {
+            let idx = (i - n) % sz
+            while (idx < 0) idx += sz
+            while (idx > sz) idx -= sz
+            y[i] = x[idx]
+        }
+        return Matrix(y)
+    }
+
+    function cd1(x, dx) {
+        let left = roll(x, +1)
+        let right = roll(x, -1)
+        let cd1 = Matrix.mul(right.sub(left), 1/(2*dx))
+        return cd1
+    }
+
+    function cd2(x, dx) {
+        let left = roll(x, 1)
+        let right = roll(x, -1)
+        let cd2 = Matrix.mul(right.sub(Matrix.mul(x, 2)).add(left), 1/(dx*dx))
+        return cd2
+    }
+
+    function init(n) {
+        conf_cd1 = parseFloat(elem_cd1.value)
+        conf_cd2 = parseFloat(elem_cd2.value)
+        let phi = Matrix(new Array(n).fill(0))
+        for (let i = 0; i < N; i++) {
+            let x = -Math.pow(i / N - 0.5, 2)*500
+            phi[i] = Math.exp(x)
+        }
+        C = cn_lin_mat(f, N, DT)
+        return phi
+    }
+
+    function f(phi) {
+        let a = Matrix.mul(cd1(phi, DX), conf_cd1)
+        if (conf_cd2 == 0) return a;
+        let b = Matrix.mul(cd2(phi, DX), conf_cd2)
+        return a.add(b)
+    }
+
+    function zeros(n) {
+        let res = []
+        for (let i = 0; i < n; i++) {
+            res.push(new Array(n).fill(0))
+        }
+        return Matrix(res)
+    }
+
+
+    function cn_lin_mat(f, n, dt) {
+        let h = []
+        for (let i = 0; i < n; i++) {
+            let d = shifted_impulse(n, i)
+            let res = f(d)
+            h.push(res)
+        }
+        let A = zeros(n)
+        let B = zeros(n)
+        for (let i = 0; i < n; i++) {
+            for (let ki = 1; ki <= n; ki++) {
+                const k = ki % n
+                const delta_ik = i == k ? 1 : 0
+                A[i*N+k] = delta_ik - dt/2*h[k][i]
+                B[i*N+k] = delta_ik + dt/2*h[k][i]
+            }
+        }
+        const Ainv = Matrix.invertLUP(A)
+        const C = Matrix.mul(Ainv, B)
+        return C
+    }
+
+    const fill = '<div class="cn_bar"><div class="cn_fill"></div></div>'
+    let innerHTML = ''
+
+    for (let i = 0; i < N; i++) {
+        innerHTML = innerHTML + fill
+    }
+
+    let C = null
+    let phi = init(N)
+    let cn_draw = document.getElementById('cn_draw')
+
+    cc = C
+
+    cn_draw.innerHTML = innerHTML
+
+    function step() {
+        phi = Matrix.mul(C, phi)
+        for (let i = 0; i < N; i++) {
+            let bar = cn_draw.childNodes[i].childNodes[0]
+            let x = phi[i]
+            if (x > 1) x = 1
+            if (x < 0) x = 0
+            bar.style.height = (1-x)*200 + 'px'
+        }
+        setTimeout(step, 20)
+    }
+
+    setTimeout(step, 1)
+
+    cn_draw.onclick = function() {
+        phi = init(N)
+        return false
+    }
+})()
+</script>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://getpelican.com/">Pelican</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

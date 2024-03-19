@@ -20,7 +20,7 @@ WITH_FUTURE_DATES = False
 # https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html
 # https://blog.llandsmeer.com/2019/07/21/building-an-uefi-x64-kernel-from-scratch-a-long-trip-to-userspace/
 
-PATH_METADATA = r'.*?/(?P<filename_no_ext>[^/+]+)\..*'
+SLUGIFY_SOURCE = 'basename'
 ARTICLE_URL = '{category}/{date:%Y}/{date:%m}/{date:%d}/{slug}.html'
 ARTICLE_SAVE_AS = '{category}/{date:%Y}/{date:%m}/{date:%d}/{slug}.html'
 

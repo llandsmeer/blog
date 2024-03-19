@@ -22,10 +22,6 @@ WITH_FUTURE_DATES = False
 
 SLUGIFY_SOURCE = 'basename'
 SLUG_REGEX_SUBSTITUTIONS = [
-    (r'[^\\w\\s-]', ''),  # remove non-alphabetical/whitespace/'-' chars
-    (r'(?u)\\A\\s*', ''),  # strip leading whitespace
-    (r'(?u)\\s*\\Z', ''),  # strip trailing whitespace
-    (r'[-\\s]+', '-'),  # reduce multiple whitespace or '-' to single '-'
     (r'^\d{4}-\d{2}-\d{2}-', '') # remove date
 ]
 ARTICLE_URL = '{category}/{date:%Y}/{date:%m}/{date:%d}/{slug}.html'

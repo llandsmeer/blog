@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Serving precompressed static sites using NGINX to save disk space"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <meta name="description" content="I had this idea to build my next ~~app~~ website as a completely static site, including all user specific content. So no C# ASP / Flask or React,..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://blog.llandsmeer.com/category/tech.html">tech</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/tech/2019/08/29/precompression.html" rel="bookmark"
+           title="Permalink to "Serving precompressed static sites using NGINX to save disk space"">"Serving precompressed static sites using NGINX to save disk space"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2019-08-29T21:50:00+02:00">
+                Published: do 29 augustus 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
+        </address>
+<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
+
+</footer><!-- /.post-info -->      <p>I had this idea to build my next ~~app~~ website as a completely static site,
+including all user specific content. So no C# ASP / Flask or React, just static files
+that get regenerated every so often with a cron job.
+The main advantage would be an extremely simple server with nearly instant page loads, and a disadvantage would be more disk usage.
+It definitely needs some form of authentication, so I still would have to write
+a bit of server code.
+But for a proof of concept,
+I tried to get nginx to serve precompressed files from disk, as most traffic
+is gzip compressed anyway. It's quite simple:</p>
+<h1>NGINX with <em>gzip_static</em> and <em>gunzip</em> modules</h1>
+<p>To serve gzip-precompressed static file,
+nginx needs the <a href="http://nginx.org/en/docs/http/ngx_http_gzip_static_module.html"><em>ngx_http_gzip_static_module</em></a>
+For backwards compatibility with clients that
+do not support gzip compression, the
+<a href="http://nginx.org/en/docs/http/ngx_http_gunzip_module.html"><em>ngx_http_gunzip_module</em></a> module is also needed.
+These modules have to be included at compile time
+with <em>./configure</em> flags.
+Luckily, these come with the
+the prebuilt nginx package that comes with
+the Ubuntu 18.04 I use. You can check this calling
+<code>nginx -V</code>:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>nginx<span class="w"> </span>-V
+nginx<span class="w"> </span>version:<span class="w"> </span>nginx/1.14.0<span class="w"> </span><span class="o">(</span>Ubuntu<span class="o">)</span>
+built<span class="w"> </span>with<span class="w"> </span>OpenSSL<span class="w"> </span><span class="m">1</span>.1.1<span class="w">  </span><span class="m">11</span><span class="w"> </span>Sep<span class="w"> </span><span class="m">2018</span>
+TLS<span class="w"> </span>SNI<span class="w"> </span>support<span class="w"> </span>enabled
+configure<span class="w"> </span>arguments:<span class="w"> </span><span class="o">[</span>...<span class="o">]</span><span class="w"> </span>--with-http_gunzip_module<span class="w"> </span>--with-http_gzip_static_module<span class="w"> </span><span class="o">[</span>...<span class="o">]</span>
+</code></pre></div>
+
+<p>When these do not show up, you have to recompile <a href="http://nginx.org/en/download.html">nginx</a>
+with the modules enabled.</p>
+<h1>Minimal Static Website with Nginx</h1>
+<p>This step is optional, just to get
+you on the same page, in a way which allows
+for experimenting with the nginx configuration without
+interfering with an existing setup.
+It eases testing a lot, but if you already have a
+nginx instance or static website running, its not needed.</p>
+<p>So, lets build a minimal static website using jekyll:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>jekyll<span class="w"> </span>new<span class="w"> </span>static-site
+<span class="go">[...]</span>
+<span class="gp">$ </span><span class="o">(</span><span class="nb">cd</span><span class="w"> </span>static-site<span class="p">;</span><span class="w"> </span>jekyll<span class="w"> </span>build<span class="o">)</span>
+<span class="go">[...]</span>
+<span class="gp">$ </span><span class="o">(</span><span class="nb">cd</span><span class="w"> </span>static-site/_site<span class="p">;</span><span class="w"> </span>find<span class="w"> </span>-type<span class="w"> </span>f<span class="o">)</span>
+<span class="go">./about/index.html</span>
+<span class="go">./js/respond.js</span>
+<span class="go">./js/html5shiv.js</span>
+<span class="go">./index.html</span>
+<span class="go">./jekyll/update/2019/08/29/welcome-to-jekyll.html</span>
+<span class="go">./css/main.css</span>
+<span class="go">./feed.xml</span>
+
+<span class="gp">$ </span><span class="o">(</span><span class="nb">cd</span><span class="w"> </span>static-site/_site<span class="p">;</span><span class="w"> </span>find<span class="w"> </span>.<span class="w"> </span>-type<span class="w"> </span>f<span class="w"> </span>-exec<span class="w"> </span>du<span class="w"> </span>--apparent-size<span class="w"> </span>-ah<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+<span class="o">)</span>
+<span class="go">7,3K    ./about/index.html</span>
+<span class="go">10K     ./js/respond.js</span>
+<span class="go">10K     ./js/html5shiv.js</span>
+<span class="go">5,1K    ./index.html</span>
+<span class="go">6,7K    ./jekyll/update/2019/08/29/welcome-to-jekyll.html</span>
+<span class="go">8,7K    ./css/main.css</span>
+<span class="go">3,5K    ./feed.xml</span>
+</code></pre></div>
+
+<p>Now, write a minimal custom nginx config.
+This way nginx can run as a regular user.
+Make sure to update the root path to point to
+the jekyll build target.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># file custom-nginx.conf</span>
+<span class="k">error_log</span><span class="w"> </span><span class="s">/tmp/nginx.error.log</span><span class="p">;</span>
+<span class="k">daemon</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<span class="k">pid</span><span class="w"> </span><span class="s">/tmp/nginx.pid</span><span class="p">;</span>
+<span class="k">events</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="k">http</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kn">access_log</span><span class="w"> </span><span class="s">/tmp/nginx.access.log</span><span class="p">;</span>
+<span class="w">    </span><span class="kn">include</span><span class="w">    </span><span class="s">/etc/nginx/mime.types</span><span class="p">;</span>
+<span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kn">listen</span><span class="w"> </span><span class="mi">8080</span><span class="w"> </span><span class="s">default_server</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">listen</span><span class="w"> </span><span class="s">[::]:8080</span><span class="w"> </span><span class="s">default_server</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">root</span><span class="w"> </span><span class="s">/home/llandsmeer/static-site/_site</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">index</span><span class="w"> </span><span class="s">index.html</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">server_name</span><span class="w"> </span><span class="s">_</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="p">=</span><span class="mi">404</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And run it as a regular user. Note that
+you need to specify an absolute path to
+the config file.
+The default jekyll template should show up at
+<code>localhost:8080</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>nginx<span class="w"> </span>-c<span class="w"> </span><span class="k">$(</span>readlink<span class="w"> </span>-f<span class="w"> </span>nginx.conf<span class="k">)</span>
+</code></pre></div>
+
+<p>With this setup, we can continue to
+forcing all assets to be pre gzip-compressed.</p>
+<h1>Precompression</h1>
+<p>So lets precompress the static site. At first, I tried
+<code>gzip -r .</code> (and also <code>gzip -r /</code> in an accident, which was not so much fun...).
+That did not work, as nginx needs the original filename to be present
+as well as the gzipped variant. As the gzipped version is
+always used, the file with the original filename
+can be empty.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>static-site/_site
+<span class="gp">$ </span><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>.<span class="w"> </span>-type<span class="w"> </span>f<span class="k">)</span>
+<span class="go">do</span>
+<span class="go">    gzip -v &quot;$file&quot;</span>
+<span class="go">    touch -r &quot;$file&quot;.gz &quot;$file&quot;</span>
+<span class="go">done</span>
+<span class="go">./about/index.html:      72.1% -- replaced with ./about/index.html.gz</span>
+<span class="go">./js/respond.js:         62.0% -- replaced with ./js/respond.js.gz</span>
+<span class="go">./js/html5shiv.js:       70.1% -- replaced with ./js/html5shiv.js.gz</span>
+<span class="go">./index.html:    61.7% -- replaced with ./index.html.gz</span>
+<span class="go">./jekyll/update/2019/08/29/welcome-to-jekyll.html:       59.8% -- replaced with ./jekyll/update/2019/08/29/welcome-to-jekyll.html.gz</span>
+<span class="go">./css/main.css:  77.5% -- replaced with ./css/main.css.gz</span>
+<span class="go">./feed.xml:      64.1% -- replaced with ./feed.xml.gz</span>
+<span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>../..
+</code></pre></div>
+
+<p>Navigating to <code>localhost:8080</code> will give you a blank page now.
+To allow nginx to serve precompressed files, the <em>gzip_static</em> option needs
+to be enabled. Setting it to <em>on</em> allows nginx to choose between
+a precompressed or normal version, but as there is no normal version,
+it is set to <em>always</em>. Then, for clients which do not support
+gzip compressed communication, the option <em>gunzip</em> is enabled
+which allows nginx to decompress a file before sending it over the wire.</p>
+<p>So add these lines to the <em>server</em> directive in the nginx config:</p>
+<div class="highlight"><pre><span></span><code><span class="k">gzip_static</span><span class="w">  </span><span class="s">always</span><span class="p">;</span>
+<span class="k">gzip_proxied</span><span class="w"> </span><span class="s">expired</span><span class="w"> </span><span class="s">no-cache</span><span class="w"> </span><span class="s">no-store</span><span class="w"> </span><span class="s">private</span><span class="w"> </span><span class="s">auth</span><span class="p">;</span>
+<span class="k">gunzip</span><span class="w">       </span><span class="no">on</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Et voil&agrave;, a completely precompressed static website, served
+over nginx with backwards compatibility for clients that do not
+support compression.</p>
+<h1>Size Comparison</h1>
+<p>In this simple example, there was a nice reduction in size
+(altough for a website this size, precompression
+is definitely premature optimization).
+Note the distinction between disk usage and apparant file
+size. Directories and empty files take up space too!</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Method</th>
+<th style="text-align: right;">Disk Usage</th>
+<th style="text-align: right;">Apparent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Normal</td>
+<td style="text-align: right;">100K</td>
+<td style="text-align: right;">87K</td>
+</tr>
+<tr>
+<td style="text-align: left;">Gzipped</td>
+<td style="text-align: right;">64K</td>
+<td style="text-align: right;">53K</td>
+</tr>
+</tbody>
+</table>
+<h1>Next</h1>
+<p>There is also <a href="https://github.com/google/zopfli">Zopfli</a>,
+which performs better gzip compression but is a bit slower.
+However for files this small, the effect was not noticable
+in filesizes expressed in kilobytes.
+To perform precompression using zopfli, use this:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>static-site/_site
+<span class="gp">$ </span><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>find<span class="w"> </span>.<span class="w"> </span>-type<span class="w"> </span>f<span class="k">)</span>
+<span class="go">do</span>
+<span class="go">    zopfli &quot;$file&quot;</span>
+<span class="go">    rm &quot;$file&quot;</span>
+<span class="go">    touch -r &quot;$file&quot;.gz &quot;$file&quot;</span>
+<span class="go">done</span>
+<span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>../..
+</code></pre></div>
+
+<p>Another possibility, of course, is to use a filesystem which has compression built in :).</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://github.com/llandsmeer">Github</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

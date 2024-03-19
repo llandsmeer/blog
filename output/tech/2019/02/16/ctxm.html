@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Recursive sata structures: Catamorphism with context"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Lennart Landsmeer Atom Feed" />
+        <meta name="description" content="In haskell, the Fix f data type allows you to specify a recursive datatype from its fixpoint. Folds and unfolds, as catamorphisms and..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">Lennart Landsmeer</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://blog.llandsmeer.com/category/tech.html">tech</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/tech/2019/02/16/ctxm.html" rel="bookmark"
+           title="Permalink to "Recursive sata structures: Catamorphism with context"">"Recursive sata structures: Catamorphism with context"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2019-02-16T01:20:00+01:00">
+                Published: za 16 februari 2019
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://blog.llandsmeer.com/author/lennart landsmeer.html">Lennart Landsmeer</a>
+        </address>
+<p>In <a href="https://blog.llandsmeer.com/category/tech.html">tech</a>.</p>
+
+</footer><!-- /.post-info -->      <p>In haskell, the <code>Fix f</code> data type allows you to specify a recursive datatype from its fixpoint.  Folds and unfolds, as catamorphisms and anamorphisms, come for free. With these <em>recursion schemes</em>, functions can be specified over the data type without explicit recursion. A catamorphism folds bottom-top to a single value, while its dual the anamorphism can be used to unfold a single value.</p>
+<div class="highlight"><pre><span></span><code><span class="kr">newtype</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">unFix</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="p">(</span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+
+<span class="nf">cata</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Functor</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span>
+<span class="nf">cata</span><span class="w"> </span><span class="n">alg</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">alg</span><span class="w"> </span><span class="o">.</span><span class="w"> </span><span class="n">fmap</span><span class="w"> </span><span class="p">(</span><span class="n">cata</span><span class="w"> </span><span class="n">alg</span><span class="p">)</span><span class="w"> </span><span class="o">.</span><span class="w"> </span><span class="n">unFix</span>
+
+<span class="nf">ana</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Functor</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span>
+<span class="nf">ana</span><span class="w"> </span><span class="n">coalg</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="o">.</span><span class="w"> </span><span class="n">fmap</span><span class="w"> </span><span class="p">(</span><span class="n">ana</span><span class="w"> </span><span class="n">coalg</span><span class="p">)</span><span class="w"> </span><span class="o">.</span><span class="w"> </span><span class="n">coalg</span>
+</code></pre></div>
+
+<h1>Example</h1>
+<p>A binary tree is a recursive data type that lends itself perfectly well for definition by <code>Fix</code>. Notice that <code>TreeF</code> is not recursive and would also allow for example for a tagged binary tree by using a <code>CoFree a f</code> Comonad.</p>
+<div class="highlight"><pre><span></span><code><span class="cm">{-# LANGUAGE TypeSynonymInstances,FlexibleInstances,LambdaCase,DeriveFunctor #-}</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="kt">Tree</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="p">(</span><span class="kt">TreeF</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+<span class="kr">data</span><span class="w"> </span><span class="kt">TreeF</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">NodeF</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">LeafF</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="kr">deriving</span><span class="w"> </span><span class="kt">Functor</span>
+
+<span class="kr">instance</span><span class="w"> </span><span class="kt">Show</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="kt">Show</span><span class="w"> </span><span class="p">(</span><span class="kt">Tree</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="kr">where</span>
+<span class="w">  </span><span class="n">show</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">cata</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="nf">\</span><span class="kr">case</span>
+<span class="w">    </span><span class="kt">NodeF</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">unwords</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;(&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;)&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="kt">LeafF</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">show</span><span class="w"> </span><span class="n">x</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="o">*</span><span class="n">Main</span><span class="o">&gt;</span><span class="w"> </span><span class="n">let</span><span class="w"> </span><span class="n">node</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Fix</span><span class="w"> </span><span class="n">$</span><span class="w"> </span><span class="n">NodeF</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="n">r</span>
+<span class="o">*</span><span class="n">Main</span><span class="o">&gt;</span><span class="w"> </span><span class="n">let</span><span class="w"> </span><span class="n">leaf</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Fix</span><span class="w"> </span><span class="n">$</span><span class="w"> </span><span class="n">LeafF</span><span class="w"> </span><span class="n">x</span>
+<span class="o">*</span><span class="n">Main</span><span class="o">&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">leaf</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="n n-Quoted">`node`</span><span class="w"> </span><span class="n">leaf</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="n n-Quoted">`node`</span><span class="w"> </span><span class="p">(</span><span class="n">leaf</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="n n-Quoted">`node`</span><span class="w"> </span><span class="n">leaf</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span>
+<span class="p">(</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+</code></pre></div>
+
+<h1>Adding Context</h1>
+<p>However, the catamorphism only passes information bottom to top. It is not possible to pass down context from a parent node to a child node. I came across this problem when converting an expression to its DeBruijn convention form. A simpler use case that can not be done solely using a catamorphism is tagging the leaves of a tree with their depth.</p>
+<div class="highlight"><pre><span></span><code><span class="nf">ctxm</span>
+<span class="w">    </span><span class="ow">::</span><span class="w"> </span><span class="kt">Functor</span><span class="w"> </span><span class="n">f</span>
+<span class="w">    </span><span class="ow">=&gt;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="p">(</span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">    </span><span class="ow">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">b</span>
+<span class="nf">ctxm</span><span class="w"> </span><span class="n">ctx</span><span class="w"> </span><span class="n">nxt</span><span class="w"> </span><span class="n">alg</span><span class="w"> </span><span class="p">(</span><span class="kt">Fix</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">alg</span><span class="w"> </span><span class="n">ctx</span><span class="w"> </span><span class="p">(</span><span class="n">fmap</span><span class="w"> </span><span class="p">(</span><span class="n">ctxm</span><span class="w"> </span><span class="p">(</span><span class="n">nxt</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="n">nxt</span><span class="w"> </span><span class="n">alg</span><span class="p">)</span><span class="w"> </span><span class="n">f</span><span class="p">)</span>
+</code></pre></div>
+
+<p>I believe it is certainly possible to archieve this using existing recursion schemes (there are a <em>lot</em> of them), but trying to do that took me longer than finding this function. Here is an example of depth-tagging the above-defined binary tree.</p>
+<div class="highlight"><pre><span></span><code><span class="nf">label</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Tree</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Tree</span><span class="w"> </span><span class="p">(</span><span class="kt">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+<span class="nf">label</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">ctxm</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="n">nxt</span><span class="w"> </span><span class="n">alg</span><span class="w"> </span><span class="kr">where</span>
+<span class="w">  </span><span class="c1">-- state/context modifying function</span>
+<span class="w">  </span><span class="n">nxt</span><span class="w"> </span><span class="p">(</span><span class="kt">NodeF</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="w">  </span><span class="n">nxt</span><span class="w"> </span><span class="p">(</span><span class="kt">LeafF</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">id</span>
+<span class="w">  </span><span class="c1">-- algorithm that uses the context</span>
+<span class="w">  </span><span class="n">alg</span><span class="w"> </span><span class="n">ctx</span><span class="w"> </span><span class="p">(</span><span class="kt">LeafF</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kt">LeafF</span><span class="w"> </span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
+<span class="w">  </span><span class="n">alg</span><span class="w"> </span><span class="n">ctx</span><span class="w"> </span><span class="p">(</span><span class="kt">NodeF</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="n">r</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Fix</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kt">NodeF</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="n">r</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="o">*</span><span class="n">Main</span><span class="o">&gt;</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="n">$</span><span class="w"> </span><span class="p">(</span><span class="n">leaf</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="n n-Quoted">`node`</span><span class="w"> </span><span class="n">leaf</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="n n-Quoted">`node`</span><span class="w"> </span><span class="n">leaf</span><span class="w"> </span><span class="mi">3</span>
+<span class="p">(</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+</code></pre></div>
+
+<p>And there it is, a catamorphism with context.</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://github.com/llandsmeer">Github</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="https://blog.llandsmeer.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate">atom feed</a></li>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

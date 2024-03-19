@@ -20,8 +20,14 @@ WITH_FUTURE_DATES = False
 # https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html
 # https://blog.llandsmeer.com/tech/2019/07/21/2019-07-21-uefi-x64-userland.html
 
-# SLUGIFY_SOURCE = 'basename'
-FILENAME_METADATA = r'(?P<date>\d{4}-\d{2}-\d{2})_(?P<slug>.*)'
+SLUGIFY_SOURCE = 'basename'
+SLUG_REGEX_SUBSTITUTIONS = [
+    (r'[^\\w\\s-]', ''),  # remove non-alphabetical/whitespace/'-' chars
+    (r'(?u)\\A\\s*', ''),  # strip leading whitespace
+    (r'(?u)\\s*\\Z', ''),  # strip trailing whitespace
+    (r'[-\\s]+', '-'),  # reduce multiple whitespace or '-' to single '-'
+    (r'^\d{4}-\d{2}-\d{2}-', '') # remove date
+]
 ARTICLE_URL = '{category}/{date:%Y}/{date:%m}/{date:%d}/{slug}.html'
 ARTICLE_SAVE_AS = '{category}/{date:%Y}/{date:%m}/{date:%d}/{slug}.html'
 

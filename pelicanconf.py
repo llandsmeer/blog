@@ -18,9 +18,10 @@ DEFAULT_CATEGORY = 'tech'
 WITH_FUTURE_DATES = False
 
 # https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html
-# https://blog.llandsmeer.com/2019/07/21/building-an-uefi-x64-kernel-from-scratch-a-long-trip-to-userspace/
+# https://blog.llandsmeer.com/tech/2019/07/21/2019-07-21-uefi-x64-userland.html
 
-SLUGIFY_SOURCE = 'basename'
+# SLUGIFY_SOURCE = 'basename'
+FILENAME_METADATA = r'(?P<date>\d{4}-\d{2}-\d{2})_(?P<slug>.*)'
 ARTICLE_URL = '{category}/{date:%Y}/{date:%m}/{date:%d}/{slug}.html'
 ARTICLE_SAVE_AS = '{category}/{date:%Y}/{date:%m}/{date:%d}/{slug}.html'
 

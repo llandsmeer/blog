@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Open cite-reference from bibtex in when editing latex in vim"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="The Weekend Writeup Atom Feed" />
+        <meta name="description" content="By lack of a better reference manager, here is a simple code snippet to open the corresponding doi-link from a \cite{} command in latex. function!..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">The Weekend Writeup <strong>Lennart Landsmeer's Personal Blog</strong></a></h1>
+                <nav><ul>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/tech/2024/03/21/nvim-tex-open-cite.html" rel="bookmark"
+           title="Permalink to "Open cite-reference from bibtex in when editing latex in vim"">"Open cite-reference from bibtex in when editing latex in vim"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2024-03-21T14:08:46.912121+00:00">
+        21 mrt 2024
+        </abbr>
+
+
+</footer><!-- /.post-info -->      <p>By lack of a better reference manager, here is a simple code snippet
+to open the corresponding doi-link from a <code>\cite{}</code> command in latex.</p>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="nf">! OpenDoiForCite</span><span class="p">()</span>
+<span class="w">  </span><span class="n">let</span><span class="w"> </span><span class="n">cite_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">expand</span><span class="p">(</span><span class="s">&#39;&lt;cword&gt;&#39;</span><span class="p">)</span>
+<span class="w">  </span><span class="n">let</span><span class="w"> </span><span class="n">root</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;.&#39;</span>
+<span class="w">  </span><span class="n">let</span><span class="w"> </span><span class="n">bib_files</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">globpath</span><span class="p">(</span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;**/*.bib&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="n">file</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">bib_files</span>
+<span class="w">    </span><span class="n">let</span><span class="w"> </span><span class="n">grepre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;@[a-z]+{&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">cite_name</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;\s*,(\s*[a-z]+\s*=\s*{[^}]+},?\s*)+}&#39;</span>
+<span class="w">    </span><span class="n">let</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">system</span><span class="p">(</span><span class="s">&#39;grep -zoP &quot;&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">grepre</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot; &#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">file</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">result</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="s">&#39;&#39;</span>
+<span class="w">      </span><span class="nb">echo</span><span class="w"> </span><span class="n">result</span>
+<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="n">doi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;doi\s*=\s*{\([^}]\+\)}&#39;</span><span class="p">)</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="n">len</span><span class="p">(</span><span class="n">doi</span><span class="p">)</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s">&#39;doi:&#39;</span><span class="p">.</span><span class="w"> </span><span class="nb">string</span><span class="p">(</span><span class="n">doi</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="w">        </span><span class="n">execute</span><span class="w"> </span><span class="s">&#39;silent !chromium-browser &quot;https://doi.org/&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">doi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot;&lt;cr&gt;&#39;</span>
+<span class="w">        </span><span class="k">return</span>
+<span class="w">      </span><span class="n">endif</span>
+<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="nb">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;title\s*=\s*{\([^}]\+\)}&#39;</span><span class="p">)</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="n">len</span><span class="p">(</span><span class="nb">title</span><span class="p">)</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="s">&#39;&#39;</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s">&#39;title:&#39;</span><span class="p">.</span><span class="w"> </span><span class="nb">string</span><span class="p">(</span><span class="nb">title</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="w">        </span><span class="n">let</span><span class="w"> </span><span class="n">encoded_title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">substitute</span><span class="p">(</span><span class="nb">title</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;g&#39;</span><span class="p">)</span>
+<span class="w">        </span><span class="n">execute</span><span class="w"> </span><span class="s">&#39;silent !chromium-browser &quot;https://www.google.com/search?&amp;q=&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">encoded_title</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot;&#39;</span>
+<span class="w">        </span><span class="k">return</span>
+<span class="w">      </span><span class="n">endif</span>
+<span class="w">    </span><span class="n">endif</span>
+<span class="w">  </span><span class="n">endfor</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s">&quot;DOI or title not found for citation: &quot;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">cite_name</span>
+<span class="n">endfunction</span>
+
+<span class="s">autocmd</span><span class="w"> </span><span class="s">FileType</span><span class="w"> </span><span class="s">tex</span><span class="w"> </span><span class="s">nnoremap</span><span class="w"> </span><span class="o">&lt;</span><span class="n">buffer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">K</span><span class="w"> </span><span class="p">:</span><span class="n">call</span><span class="w"> </span><span class="n">OpenDoiForCite</span><span class="p">()</span><span class="o">&lt;</span><span class="n">CR</span><span class="o">&gt;</span>
+</code></pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+</body>
+</html>

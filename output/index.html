@@ -19,39 +19,67 @@
             <aside id="featured" class="body">
                 <article>
                     <h2>Last article:</h2>
-                    <h1 class="entry-title"><a href="https://blog.llandsmeer.com/tech/2021/04/13/pval-unicode.html">Printing p-values using unicode superscripts in R</a></h1>
+                    <h1 class="entry-title"><a href="https://blog.llandsmeer.com/tech/2024/03/21/nvim-tex-open-cite.html">Open cite-reference from bibtex in when editing latex in vim</a></h1>
 <footer class="post-info">
-        <abbr class="published" title="2021-04-13T00:00:00+01:00">
-        13 apr 2021
+        <abbr class="published" title="2024-03-21T14:08:46.912121+00:00">
+        21 mrt 2024
         </abbr>
 
 
-</footer><!-- /.post-info -->                    <p>This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it’s of use to others as well:</p>
-<div class="highlight"><pre><span></span><code><span class="n">pval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">function </span><span class="p">(</span><span class="n">ps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">superscript</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s">&#39;\u{2070}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b9}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b2}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b3}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2074}&#39;</span><span class="p">,</span>
-<span class="w">                    </span><span class="s">&#39;\u{2075}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2076}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2077}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2078}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2079}&#39;</span><span class="p">)</span>
-<span class="w">    </span><span class="nf">sapply</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="nf">function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nf">if </span><span class="p">(</span><span class="nf">is.na</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="w"> </span><span class="nf">return</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
-<span class="w">        </span><span class="nf">if </span><span class="p">(</span><span class="n">p</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="nf">return </span><span class="p">(</span><span class="nf">sprintf</span><span class="p">(</span><span class="s">&quot;%.2f&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">))</span>
-<span class="w">        </span><span class="n">e</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">ceiling</span><span class="p">(</span><span class="o">-</span><span class="nf">log10</span><span class="p">(</span><span class="nf">abs</span><span class="p">(</span><span class="n">p</span><span class="p">)))</span>
-<span class="w">        </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">paste0</span><span class="p">(</span><span class="nf">lapply</span><span class="p">(</span><span class="nf">utf8ToInt</span><span class="p">(</span><span class="nf">toString</span><span class="p">(</span><span class="n">e</span><span class="p">)),</span><span class="w"> </span><span class="nf">function</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">superscript</span><span class="p">[</span><span class="n">d</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">48</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">1</span><span class="p">]</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="n">collapse</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
-<span class="w">        </span><span class="nf">sprintf</span><span class="p">(</span><span class="s">&#39;%.1f%s10%s%s&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">10</span><span class="o">^-</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2715}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{207b}&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">)</span>
-<span class="w">    </span><span class="p">})</span>
-<span class="p">}</span>
-</code></pre></div>
+</footer><!-- /.post-info -->                    <p>By lack of a better reference manager, here is a simple code snippet
+to open the corresponding doi-link from a <code>\cite{}</code> command in latex.</p>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="nf">! OpenDoiForCite</span><span class="p">()</span>
+<span class="w">  </span><span class="n">let</span><span class="w"> </span><span class="n">cite_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">expand</span><span class="p">(</span><span class="s">&#39;&lt;cword&gt;&#39;</span><span class="p">)</span>
+<span class="w">  </span><span class="n">let</span><span class="w"> </span><span class="n">root</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;.&#39;</span>
+<span class="w">  </span><span class="n">let</span><span class="w"> </span><span class="n">bib_files</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">globpath</span><span class="p">(</span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;**/*.bib&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="n">file</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">bib_files</span>
+<span class="w">    </span><span class="n">let</span><span class="w"> </span><span class="n">grepre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;@[a-z]+{&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">cite_name</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;\s*,(\s*[a-z]+\s*=\s*{[^}]+},?\s*)+}&#39;</span>
+<span class="w">    </span><span class="n">let</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">system</span><span class="p">(</span><span class="s">&#39;grep -zoP &quot;&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">grepre</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot; &#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">file</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">result</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="s">&#39;&#39;</span>
+<span class="w">      </span><span class="nb">echo</span><span class="w"> </span><span class="n">result</span>
+<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="n">doi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;doi\s*=\s*{\([^}]\+\)}&#39;</span><span class="p">)</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="n">len</span><span class="p">(</span><span class="n">doi</span><span class="p">)</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s">&#39;doi:&#39;</span><span class="p">.</span><span class="w"> </span><span class="nb">string</span><span class="p">(</span><span class="n">doi</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="w">        </span><span class="n">execute</span><span class="w"> </span><span class="s">&#39;silent !chromium-browser &quot;https://doi.org/&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">doi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot;&lt;cr&gt;&#39;</span>
+<span class="w">        </span><span class="k">return</span>
+<span class="w">      </span><span class="n">endif</span>
+<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="nb">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;title\s*=\s*{\([^}]\+\)}&#39;</span><span class="p">)</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="n">len</span><span class="p">(</span><span class="nb">title</span><span class="p">)</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="s">&#39;&#39;</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s">&#39;title:&#39;</span><span class="p">.</span><span class="w"> </span><span class="nb">string</span><span class="p">(</span><span class="nb">title</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="w">        </span><span class="n">let</span><span class="w"> </span><span class="n">encoded_title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">substitute</span><span class="p">(</span><span class="nb">title</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;g&#39;</span><span class="p">)</span>
+<span class="w">        </span><span class="n">execute</span><span class="w"> </span><span class="s">&#39;silent !chromium-browser &quot;https://www.google.com/search?&amp;q=&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">encoded_title</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot;&#39;</span>
+<span class="w">        </span><span class="k">return</span>
+<span class="w">      </span><span class="n">endif</span>
+<span class="w">    </span><span class="n">endif</span>
+<span class="w">  </span><span class="n">endfor</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s">&quot;DOI or title not found for citation: &quot;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">cite_name</span>
+<span class="n">endfunction</span>
 
-<p>For example:</p>
-<div class="highlight"><pre><span></span><code># pval(c(0.1, 0.01, 0.001))
-[1] &quot;1.0✕10⁻¹&quot; &quot;1.0✕10⁻²&quot; &quot;1.0✕10⁻³&quot;
-
-# pval(0.1)
-[1] &quot;1.0✕10⁻¹&quot;
+<span class="s">autocmd</span><span class="w"> </span><span class="s">FileType</span><span class="w"> </span><span class="s">tex</span><span class="w"> </span><span class="s">nnoremap</span><span class="w"> </span><span class="o">&lt;</span><span class="n">buffer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">K</span><span class="w"> </span><span class="p">:</span><span class="n">call</span><span class="w"> </span><span class="n">OpenDoiForCite</span><span class="p">()</span><span class="o">&lt;</span><span class="n">CR</span><span class="o">&gt;</span>
 </code></pre></div>                </article>
             </aside><!-- /#featured -->
                 <section id="content" class="body">
                     <h1>Other articles</h1>
                     <hr />
                     <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="https://blog.llandsmeer.com/tech/2021/04/13/pval-unicode.html" rel="bookmark"
+                           title="Permalink to "Printing p-values using unicode superscripts in R"">Printing p-values using unicode superscripts in R</a></h1>
+                </header>
+
+                <div class="entry-content">
+                <p>This is a pretty simple one. I wanted to show some nicely formatted p-values on a plot by an external library, but it wasn’t possible to pass anything else than a character vector as labels. So I built this function that formats any p-value using unicode characters. Hopefully it’s of use to others as well:</p>
+<div class="highlight"><pre><span></span><code><span class="n">pval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">function </span><span class="p">(</span><span class="n">ps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">superscript</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s">&#39;\u{2070}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b9}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b2}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{00b3}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2074}&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="s">&#39;\u{2075}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2076}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2077}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2078}&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;\u{2079}&#39;</span><span class="p">)</span>
+<span class="w">    </span><span class="nf">sapply</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="nf">function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nf">if </span><span class="p">(</span><span class="nf">is.na</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="w"> </span><span class="nf">return</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="nf">if </span><span class="p">(</span><span class="n">p</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="nf">return </span><span class="p">(</span><span class="nf">sprintf</span><span class="p">(</span><span class="s">&quot;%.2f&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">p …</span></code></pre></div>
+                <a class="readmore" href="https://blog.llandsmeer.com/tech/2021/04/13/pval-unicode.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>
@@ -231,25 +259,6 @@ However, I never managed to get to userspace (/userland/CPL 3).</p>
 I decided to finally write a 'modern' UEFI x64 kernel which is able to get to userspace, and document my
 progress …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="https://blog.llandsmeer.com/tech/2019/07/19/at-batch-unix.html" rel="bookmark"
-                           title="Permalink to "Fixing the posix Batch job scheduler by updating its load average limit"">Fixing the posix Batch job scheduler by updating its load average limit</a></h1>
-                </header>
-
-                <div class="entry-content">
-                <p><code>batch(1)</code> is a little known posix command that
-supposedly takes a list of jobs/shell scripts and executes them when the load average of the computer drops below a certain level.
-It's far from an ideal scheduler, but it's builtin and does what is should do.
-Problem is, the queued commands actually do not execute sometimes.
-The load average limit is 1.5 by default,
-but I have 6 cores/12 threads, so my load average rises easily above that.</p>
-<p>The <code>atd(8)</code> daemon is responsible for job execution.
-Add <code>-l $(your_load_limit)</code> to the <code>atd</code> invocation in <code>/etc/systemd …</code></p>
-                <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/07/19/at-batch-unix.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
                 </ol><!-- /#posts-list -->

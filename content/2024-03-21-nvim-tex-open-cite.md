@@ -5,6 +5,8 @@ date:   2024-03-21T14:08:46.912121+00:00
 categories: tech
 ---
 
+# Open links for \cite{} commands
+
 By lack of a better reference manager, here is a simple code snippet
 to open the corresponding doi-link from a `\cite{}` command in latex.
 
@@ -39,3 +41,56 @@ endfunction
 
 autocmd FileType tex nnoremap <buffer> K :call OpenDoiForCite()<CR>
 ```
+
+# Folding
+
+```
+Plug 'matze/vim-tex-fold'
+```
+
+# Outline-based navigation
+
+```
+Plug 'vim-voom/VOoM'
+```
+
+```
+autocmd FileType tex nnoremap <BS> :Voom latex<cr>
+autocmd FileType voomtree set nofoldenable
+```
+
+# Softwrapping
+
+Using some neovim specific settings we obtain really nice softwraps
+
+```
+autocmd FileType tex set wrap
+autocmd FileType tex set breakindent
+autocmd FileType tex set breakindentopt=shift:2
+autocmd FileType tex set showbreak==>
+autocmd FileType tex set linebreak
+
+nnoremap j gj
+nnoremap k gk
+nnoremap $ g$
+nnoremap 0 g0
+nnoremap ^ g^
+nnoremap A g$a
+nnoremap I g^i
+```
+
+# Forward Synctex
+
+I'm using Evince to view PDFs (the ubuntu default)
+
+```
+wget 'https://raw.githubusercontent.com/Vinno97/evince-synctex/master/evince-synctex.sh'
+```
+
+Then in neovim:
+
+```
+autocmd CursorMoved <buffer> :execute "!bash evince-synctex.sh sync ./build/main.pdf main.tex " . line(".")
+```
+
+

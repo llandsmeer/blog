@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Open cite-reference from bibtex in when editing latex in vim"
+title:  "Open latex \cite{} reference in vim"
 date:   2024-03-21T14:08:46.912121+00:00
 categories: tech
 ---

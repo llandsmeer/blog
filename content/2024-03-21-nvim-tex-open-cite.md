@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Open latex \cite{} reference in vim"
+title:  "VIM editing setup for LaTeX"
 date:   2024-03-21T14:08:46.912121+00:00
 categories: tech
 ---

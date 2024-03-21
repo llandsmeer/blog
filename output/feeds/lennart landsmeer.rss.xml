@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0"><channel><title>The Weekend Writeup - Lennart Landsmeer</title><link>https://blog.llandsmeer.com/</link><description>Lennart Landsmeer's Personal Blog</description><lastBuildDate>Thu, 21 Mar 2024 14:08:46 +0000</lastBuildDate><item><title>"Open latex \cite{} reference in vim"</title><link>https://blog.llandsmeer.com/tech/2024/03/21/nvim-tex-open-cite.html</link><description>&lt;h1&gt;Open links for \cite{} commands&lt;/h1&gt;
+<rss version="2.0"><channel><title>The Weekend Writeup - Lennart Landsmeer</title><link>https://blog.llandsmeer.com/</link><description>Lennart Landsmeer's Personal Blog</description><lastBuildDate>Thu, 21 Mar 2024 14:08:46 +0000</lastBuildDate><item><title>"VIM editing setup for LaTeX"</title><link>https://blog.llandsmeer.com/tech/2024/03/21/nvim-tex-open-cite.html</link><description>&lt;h1&gt;Open links for \cite{} commands&lt;/h1&gt;
 &lt;p&gt;By lack of a better reference manager, here is a simple code snippet
 to open the corresponding doi-link from a &lt;code&gt;\cite{}&lt;/code&gt; command in latex.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="nf"&gt;! OpenDoiForCite&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;

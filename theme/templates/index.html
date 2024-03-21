@@ -11,7 +11,7 @@
                     <h2>Last article:</h2>
                     <h1 class="entry-title"><a href="{{ SITEURL }}/{{ article.url }}">{{ article.title[1:-1] }}</a></h1>
                     {% include 'article_infos.html' %}
-                    {{ article.content }}{% include 'comments.html' %}
+                    {{ article.summary }}{% include 'comments.html' %}
                 </article>
             </aside><!-- /#featured -->
             {% if loop.length > 1 %}

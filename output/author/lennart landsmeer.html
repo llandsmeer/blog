@@ -44,58 +44,7 @@ to open the corresponding doi-link from a <code>\cite{}</code> command in latex.
 <span class="w">        </span><span class="n">execute</span><span class="w"> </span><span class="s">&#39;silent !chromium-browser &quot;https://doi.org/&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">doi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot;&lt;cr&gt;&#39;</span>
 <span class="w">        </span><span class="k">return</span>
 <span class="w">      </span><span class="n">endif</span>
-<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="nb">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;title\s*=\s*{\([^}]\+\)}&#39;</span><span class="p">)</span>
-<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="n">len</span><span class="p">(</span><span class="nb">title</span><span class="p">)</span><span class="w"> </span>!<span class="p">=</span><span class="w"> </span><span class="s">&#39;&#39;</span>
-<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s">&#39;title:&#39;</span><span class="p">.</span><span class="w"> </span><span class="nb">string</span><span class="p">(</span><span class="nb">title</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-<span class="w">        </span><span class="n">let</span><span class="w"> </span><span class="n">encoded_title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">substitute</span><span class="p">(</span><span class="nb">title</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;g&#39;</span><span class="p">)</span>
-<span class="w">        </span><span class="n">execute</span><span class="w"> </span><span class="s">&#39;silent !chromium-browser &quot;https://www.google.com/search?&amp;q=&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">encoded_title</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot;&#39;</span>
-<span class="w">        </span><span class="k">return</span>
-<span class="w">      </span><span class="n">endif</span>
-<span class="w">    </span><span class="n">endif</span>
-<span class="w">  </span><span class="n">endfor</span>
-<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s">&quot;DOI or title not found for citation: &quot;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">cite_name</span>
-<span class="n">endfunction</span>
-
-<span class="s">autocmd</span><span class="w"> </span><span class="s">FileType</span><span class="w"> </span><span class="s">tex</span><span class="w"> </span><span class="s">nnoremap</span><span class="w"> </span><span class="o">&lt;</span><span class="n">buffer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">K</span><span class="w"> </span><span class="p">:</span><span class="n">call</span><span class="w"> </span><span class="n">OpenDoiForCite</span><span class="p">()</span><span class="o">&lt;</span><span class="n">CR</span><span class="o">&gt;</span>
-</code></pre></div>
-
-<h1>Folding</h1>
-<div class="highlight"><pre><span></span><code>Plug &#39;matze/vim-tex-fold&#39;
-</code></pre></div>
-
-<h1>Outline-based navigation</h1>
-<div class="highlight"><pre><span></span><code>Plug &#39;vim-voom/VOoM&#39;
-</code></pre></div>
-
-<div class="highlight"><pre><span></span><code>autocmd FileType tex nnoremap &lt;BS&gt; :Voom latex&lt;cr&gt;
-autocmd FileType voomtree set nofoldenable
-</code></pre></div>
-
-<h1>Softwrapping</h1>
-<p>Using some neovim specific settings we obtain really nice softwraps</p>
-<div class="highlight"><pre><span></span><code><span class="nv">autocmd</span><span class="w"> </span><span class="nv">FileType</span><span class="w"> </span><span class="nv">tex</span><span class="w"> </span><span class="nv">set</span><span class="w"> </span><span class="nv">wrap</span>
-<span class="nv">autocmd</span><span class="w"> </span><span class="nv">FileType</span><span class="w"> </span><span class="nv">tex</span><span class="w"> </span><span class="nv">set</span><span class="w"> </span><span class="nv">breakindent</span>
-<span class="nv">autocmd</span><span class="w"> </span><span class="nv">FileType</span><span class="w"> </span><span class="nv">tex</span><span class="w"> </span><span class="nv">set</span><span class="w"> </span><span class="nv">breakindentopt</span><span class="o">=</span><span class="nv">shift</span><span class="o">:</span><span class="mi">2</span>
-<span class="nv">autocmd</span><span class="w"> </span><span class="nv">FileType</span><span class="w"> </span><span class="nv">tex</span><span class="w"> </span><span class="nv">set</span><span class="w"> </span><span class="nv">showbreak</span><span class="o">==&gt;</span>
-<span class="nv">autocmd</span><span class="w"> </span><span class="nv">FileType</span><span class="w"> </span><span class="nv">tex</span><span class="w"> </span><span class="nv">set</span><span class="w"> </span><span class="nv">linebreak</span>
-
-<span class="nv">nnoremap</span><span class="w"> </span><span class="nv">j</span><span class="w"> </span><span class="nv">gj</span>
-<span class="nv">nnoremap</span><span class="w"> </span><span class="nv">k</span><span class="w"> </span><span class="nv">gk</span>
-<span class="nv">nnoremap</span><span class="w"> </span><span class="p">$</span><span class="w"> </span><span class="nv">g</span><span class="p">$</span>
-<span class="nv">nnoremap</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="nv">g0</span>
-<span class="nv">nnoremap</span><span class="w"> </span><span class="o">^</span><span class="w"> </span><span class="nv">g</span><span class="o">^</span>
-<span class="nv">nnoremap</span><span class="w"> </span><span class="nv">A</span><span class="w"> </span><span class="nv">g</span><span class="p">$</span><span class="nv">a</span>
-<span class="nv">nnoremap</span><span class="w"> </span><span class="nv">I</span><span class="w"> </span><span class="nv">g</span><span class="o">^</span><span class="nv">i</span>
-</code></pre></div>
-
-<h1>Forward Synctex</h1>
-<p>I'm using Evince to view PDFs (the ubuntu default)</p>
-<div class="highlight"><pre><span></span><code>wget &#39;https://raw.githubusercontent.com/Vinno97/evince-synctex/master/evince-synctex.sh&#39;
-</code></pre></div>
-
-<p>Then in neovim:</p>
-<div class="highlight"><pre><span></span><code>autocmd CursorMoved &lt;buffer&gt; :execute &quot;!bash evince-synctex.sh sync ./build/main.pdf main.tex &quot; . line(&quot;.&quot;)
-</code></pre></div>                </article>
+<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="nb">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result …</span></code></pre></div>                </article>
             </aside><!-- /#featured -->
                 <section id="content" class="body">
                     <h1>Other articles</h1>

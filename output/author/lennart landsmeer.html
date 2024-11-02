@@ -19,14 +19,33 @@
             <aside id="featured" class="body">
                 <article>
                     <h2>Last article:</h2>
-                    <h1 class="entry-title"><a href="https://blog.llandsmeer.com/tech/2024/03/21/nvim-tex-open-cite.html">VIM editing setup for LaTeX</a></h1>
+                    <h1 class="entry-title"><a href="https://blog.llandsmeer.com/tech/2024/11/01/vim-konsole-background.html">Light/dark background in VIM based on current Konsole theme</a></h1>
 <footer class="post-info">
-        <abbr class="published" title="2024-03-21T14:08:46.912121+00:00">
-        21 mrt 2024
+        <abbr class="published" title="2024-11-01T19:25:58.997994+00:00">
+        01 nov 2024
         </abbr>
 
 
-</footer><!-- /.post-info -->                    <h1>Open links for \cite{} commands</h1>
+</footer><!-- /.post-info -->                    <p>I run konsole, tmux, and edit files in (neo)vim.
+When switching themes in konsole, the background changes - and that can make the current colorscheme in vim very ugly.
+Vim has a nice option called <code>background</code> that you can set to either <code>dark</code> or <code>light</code> based on the current terminal background.
+It does not detect that, you have to set it manually.</p>
+<p>Konsole supports exporting environment variables for each theme, which could make that, in theory easier.
+Now tmux complicates the story again. The current terminal does not correspond to any shell konsole is aware of, and you could even …</p>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="https://blog.llandsmeer.com/tech/2024/03/21/nvim-tex-open-cite.html" rel="bookmark"
+                           title="Permalink to "VIM editing setup for LaTeX"">VIM editing setup for LaTeX</a></h1>
+                </header>
+
+                <div class="entry-content">
+                <h1>Open links for \cite{} commands</h1>
 <p>By lack of a better reference manager, here is a simple code snippet
 to open the corresponding doi-link from a <code>\cite{}</code> command in latex.</p>
 <div class="highlight"><pre><span></span><code><span class="k">function</span><span class="nf">! OpenDoiForCite</span><span class="p">()</span>
@@ -44,12 +63,10 @@ to open the corresponding doi-link from a <code>\cite{}</code> command in latex.
 <span class="w">        </span><span class="n">execute</span><span class="w"> </span><span class="s">&#39;silent !chromium-browser &quot;https://doi.org/&#39;</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">doi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="s">&#39;&quot;&lt;cr&gt;&#39;</span>
 <span class="w">        </span><span class="k">return</span>
 <span class="w">      </span><span class="n">endif</span>
-<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="nb">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result …</span></code></pre></div>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+<span class="w">      </span><span class="n">let</span><span class="w"> </span><span class="nb">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">matchlist</span><span class="p">(</span><span class="n">result …</span></code></pre></div>
+                <a class="readmore" href="https://blog.llandsmeer.com/tech/2024/03/21/nvim-tex-open-cite.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>
@@ -227,26 +244,6 @@ a bit of server code.
 But for a proof of concept,
 I tried to get nginx to serve precompressed files from disk, as most …</p>
                 <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/08/29/precompression.html">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html" rel="bookmark"
-                           title="Permalink to "Building an UEFI x64 kernel from scratch: A long trip to userspace"">Building an UEFI x64 kernel from scratch: A long trip to userspace</a></h1>
-                </header>
-
-                <div class="entry-content">
-                <p>When I just started programming, one of my first major projects was building my own kernel.
-Of course, I failed misserably. But I learned a lot.
-Back then, x64 didn't dominate the market and I never even heard about UEFI.
-Copy pasting code bits from tutorials and forum posts I ended up
-drawing some things to the screen based on keyboard input.
-However, I never managed to get to userspace (/userland/CPL 3).</p>
-<p>Things have changed a bit, and
-I decided to finally write a 'modern' UEFI x64 kernel which is able to get to userspace, and document my
-progress …</p>
-                <a class="readmore" href="https://blog.llandsmeer.com/tech/2019/07/21/uefi-x64-userland.html">read more</a>
                 </div><!-- /.entry-content -->
             </article></li>
                 </ol><!-- /#posts-list -->

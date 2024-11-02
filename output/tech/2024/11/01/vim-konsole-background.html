@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>"Light/dark background in VIM based on current Konsole theme"</title>
+        <link rel="stylesheet" href="https://blog.llandsmeer.com/theme/css/main.css" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="The Weekend Writeup Atom Feed" />
+        <meta name="description" content="I run konsole, tmux, and edit files in (neo)vim. When switching themes in konsole, the background changes - and that can make the current..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://blog.llandsmeer.com/">The Weekend Writeup <strong>Lennart Landsmeer's Personal Blog</strong></a></h1>
+                <nav><ul>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://blog.llandsmeer.com/tech/2024/11/01/vim-konsole-background.html" rel="bookmark"
+           title="Permalink to "Light/dark background in VIM based on current Konsole theme"">"Light/dark background in VIM based on current Konsole theme"</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2024-11-01T19:25:58.997994+00:00">
+        01 nov 2024
+        </abbr>
+
+
+</footer><!-- /.post-info -->      <p>I run konsole, tmux, and edit files in (neo)vim.
+When switching themes in konsole, the background changes - and that can make the current colorscheme in vim very ugly.
+Vim has a nice option called <code>background</code> that you can set to either <code>dark</code> or <code>light</code> based on the current terminal background.
+It does not detect that, you have to set it manually.</p>
+<p>Konsole supports exporting environment variables for each theme, which could make that, in theory easier.
+Now tmux complicates the story again. The current terminal does not correspond to any shell konsole is aware of, and you could even have a light-themed and dark-themed konsole window open pointed to the same terminal.
+From within tmux, I also haven't found a way to read the client's parent process' environment variables, and I couldn't even see them reflected in any process listed in /proc after a change.
+So I found a quick hack:</p>
+<p>For each theme, add an environment variable called 'KONSOLEBG' with as value light or dark.</p>
+<p>Then update</p>
+<h3>init.vim</h3>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> trim<span class="p">(</span>system<span class="p">(</span><span class="s2">&quot;colorscheme&quot;</span><span class="p">))</span> <span class="p">==</span> <span class="s2">&quot;dark&quot;</span>
+    <span class="k">set</span> <span class="nb">background</span><span class="p">=</span><span class="nb">dark</span>
+<span class="k">else</span>
+    <span class="k">set</span> <span class="nb">background</span><span class="p">=</span><span class="nb">light</span>
+<span class="k">endif</span>
+</code></pre></div>
+
+<p>and create a binary somewhere (could also do this in the system() call I guess)</p>
+<h3>~/.local/bin/colorscheme (chmod +x)</h3>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/usr/bin/env bash</span>
+
+<span class="nv">QT_SELECT</span><span class="o">=</span>qt5<span class="w"> </span>qdbus<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>org.kde.konsole-<span class="k">$(</span>xdotool<span class="w"> </span>getactivewindow<span class="w"> </span>getwindowpid<span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">$KONSOLE_DBUS_SESSION</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>org.kde.konsole.Session.environment<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;KONSOLEBG=&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-f<span class="w"> </span><span class="m">2</span><span class="w"> </span>-d<span class="w"> </span><span class="o">=</span>
+</code></pre></div>
+
+<p>which contains:</p>
+<ul>
+<li><code>QT_SELECT=qt5</code> without that I would get an error message <code>qdbus: could not find a Qt installation of ''</code></li>
+<li>qdbus the dbus communication tool. invoked as <code>qdbus [servicename] [path] [method]</code></li>
+<li>servicename <code>org.kde.konsole-$(xdotool getactivewindow getwindowpid)</code>, i.e. konsole instance based on the active window pid. Using the environment variable would result in using the konsole session from the tmux server zsh, which might not even exist anymore</li>
+<li>path: <code>$KONSOLE_DBUS_SESSION</code></li>
+<li>method:  <code>org.kde.konsole.Session.environment</code>, which lists the environment variables from the current profile</li>
+</ul>
+<h1>Alternatives</h1>
+<p>Thus full list of methods is listed below, which could also give you some hints on how to implement this differently (eg.
+eg. via <code>org.kde.konsole.Session.profile</code>)</p>
+<div class="highlight"><pre><span></span><code><span class="n">method</span><span class="w"> </span><span class="n">QByteArray</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">codec</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QStringList</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">environment</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">bool</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">flowControlEnabled</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">foregroundProcessId</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">historySize</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">bool</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">isMonitorActivity</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">bool</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">isMonitorSilence</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">processId</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">profile</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">runCommand</span><span class="p">(</span><span class="n">QString</span><span class="w"> </span><span class="n">command</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">sendMouseEvent</span><span class="p">(</span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">buttons</span><span class="p">,</span><span class="w"> </span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">column</span><span class="p">,</span><span class="w"> </span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">line</span><span class="p">,</span><span class="w"> </span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">eventType</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">sendText</span><span class="p">(</span><span class="n">QString</span><span class="w"> </span><span class="n">text</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">bool</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setCodec</span><span class="p">(</span><span class="n">QByteArray</span><span class="w"> </span><span class="n">name</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setEnvironment</span><span class="p">(</span><span class="n">QStringList</span><span class="w"> </span><span class="n">environment</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setFlowControlEnabled</span><span class="p">(</span><span class="nb nb-Type">bool</span><span class="w"> </span><span class="n">enabled</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setHistorySize</span><span class="p">(</span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">lines</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setMonitorActivity</span><span class="p">(</span><span class="nb nb-Type">bool</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setMonitorSilence</span><span class="p">(</span><span class="nb nb-Type">bool</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setMonitorSilenceSeconds</span><span class="p">(</span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">seconds</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setProfile</span><span class="p">(</span><span class="n">QString</span><span class="w"> </span><span class="n">profileName</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setTabTitleFormat</span><span class="p">(</span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">format</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">setTitle</span><span class="p">(</span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">role</span><span class="p">,</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">title</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">shellSessionId</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">tabTitleFormat</span><span class="p">(</span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">context</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">konsole</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="nb nb-Type">int</span><span class="w"> </span><span class="n">role</span><span class="p">)</span>
+<span class="k">signal</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">freedesktop</span><span class="o">.</span><span class="n">DBus</span><span class="o">.</span><span class="n">Properties</span><span class="o">.</span><span class="n">PropertiesChanged</span><span class="p">(</span><span class="n">QString</span><span class="w"> </span><span class="n">interface_name</span><span class="p">,</span><span class="w"> </span><span class="n">QVariantMap</span><span class="w"> </span><span class="n">changed_properties</span><span class="p">,</span><span class="w"> </span><span class="n">QStringList</span><span class="w"> </span><span class="n">invalidated_properties</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QDBusVariant</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">freedesktop</span><span class="o">.</span><span class="n">DBus</span><span class="o">.</span><span class="n">Properties</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="n">QString</span><span class="w"> </span><span class="n">interface_name</span><span class="p">,</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">property_name</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QVariantMap</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">freedesktop</span><span class="o">.</span><span class="n">DBus</span><span class="o">.</span><span class="n">Properties</span><span class="o">.</span><span class="n">GetAll</span><span class="p">(</span><span class="n">QString</span><span class="w"> </span><span class="n">interface_name</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">freedesktop</span><span class="o">.</span><span class="n">DBus</span><span class="o">.</span><span class="n">Properties</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">QString</span><span class="w"> </span><span class="n">interface_name</span><span class="p">,</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">property_name</span><span class="p">,</span><span class="w"> </span><span class="n">QDBusVariant</span><span class="w"> </span><span class="n">value</span><span class="p">)</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">freedesktop</span><span class="o">.</span><span class="n">DBus</span><span class="o">.</span><span class="n">Introspectable</span><span class="o">.</span><span class="n">Introspect</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="n">QString</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">freedesktop</span><span class="o">.</span><span class="n">DBus</span><span class="o">.</span><span class="n">Peer</span><span class="o">.</span><span class="n">GetMachineId</span><span class="p">()</span>
+<span class="n">method</span><span class="w"> </span><span class="nb nb-Type">void</span><span class="w"> </span><span class="n">org</span><span class="o">.</span><span class="n">freedesktop</span><span class="o">.</span><span class="n">DBus</span><span class="o">.</span><span class="n">Peer</span><span class="o">.</span><span class="n">Ping</span><span class="p">()</span>
+</code></pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+</body>
+</html>

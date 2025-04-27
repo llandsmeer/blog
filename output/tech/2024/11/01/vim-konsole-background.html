@@ -68,6 +68,15 @@ So I found a quick hack:</p>
 <li>path: <code>$KONSOLE_DBUS_SESSION</code></li>
 <li>method:  <code>org.kde.konsole.Session.environment</code>, which lists the environment variables from the current profile</li>
 </ul>
+<h1>Update April 2025</h1>
+<p>Moving to a second compute device, on Ubuntu 24.04, the colorscheme script stopped working.
+This version, while a bit less nice, gets the job done as well</p>
+<div class="highlight"><pre><span></span><code><span class="nv">QT_SELECT</span><span class="o">=</span>qt5<span class="w"> </span>qdbus<span class="w"> </span><span class="k">$(</span><span class="nv">QT_SELECT</span><span class="o">=</span>qt5<span class="w"> </span>qdbus<span class="w"> </span>org.kde.konsole-<span class="s1">&#39;*&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="nv">$KONSOLE_DBUS_SESSION</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>org.kde.konsole.Session.environment<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;KONSOLEBG=&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-f<span class="w"> </span><span class="m">2</span><span class="w"> </span>-d<span class="w"> </span><span class="o">=</span>
+</code></pre></div>
+
 <h1>Alternatives</h1>
 <p>Thus full list of methods is listed below, which could also give you some hints on how to implement this differently (eg.
 eg. via <code>org.kde.konsole.Session.profile</code>)</p>

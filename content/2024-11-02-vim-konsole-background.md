@@ -54,6 +54,17 @@ which contains:
  - method:  `org.kde.konsole.Session.environment`, which lists the environment variables from the current profile
 
 
+# Update April 2025
+
+Moving to a second compute device, on Ubuntu 24.04, the colorscheme script stopped working.
+This version, while a bit less nice, gets the job done as well
+
+```sh
+QT_SELECT=qt5 qdbus $(QT_SELECT=qt5 qdbus org.kde.konsole-'*' | head -n 1) \
+    $KONSOLE_DBUS_SESSION \
+    org.kde.konsole.Session.environment \
+    | grep 'KONSOLEBG=' | cut -f 2 -d =
+```
 
 # Alternatives
 

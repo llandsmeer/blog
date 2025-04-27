@@ -41,6 +41,15 @@ So I found a quick hack:&lt;/p&gt;
 &lt;li&gt;path: &lt;code&gt;$KONSOLE_DBUS_SESSION&lt;/code&gt;&lt;/li&gt;
 &lt;li&gt;method:  &lt;code&gt;org.kde.konsole.Session.environment&lt;/code&gt;, which lists the environment variables from the current profile&lt;/li&gt;
 &lt;/ul&gt;
+&lt;h1&gt;Update April 2025&lt;/h1&gt;
+&lt;p&gt;Moving to a second compute device, on Ubuntu 24.04, the colorscheme script stopped working.
+This version, while a bit less nice, gets the job done as well&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nv"&gt;QT_SELECT&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;qt5&lt;span class="w"&gt; &lt;/span&gt;qdbus&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="k"&gt;$(&lt;/span&gt;&lt;span class="nv"&gt;QT_SELECT&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;qt5&lt;span class="w"&gt; &lt;/span&gt;qdbus&lt;span class="w"&gt; &lt;/span&gt;org.kde.konsole-&lt;span class="s1"&gt;&amp;#39;*&amp;#39;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;head&lt;span class="w"&gt; &lt;/span&gt;-n&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="se"&gt;\&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nv"&gt;$KONSOLE_DBUS_SESSION&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="se"&gt;\&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;org.kde.konsole.Session.environment&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="se"&gt;\&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;grep&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;KONSOLEBG=&amp;#39;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;cut&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;2&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;-d&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
 &lt;h1&gt;Alternatives&lt;/h1&gt;
 &lt;p&gt;Thus full list of methods is listed below, which could also give you some hints on how to implement this differently (eg.
 eg. via &lt;code&gt;org.kde.konsole.Session.profile&lt;/code&gt;)&lt;/p&gt;
